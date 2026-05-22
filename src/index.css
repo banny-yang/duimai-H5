@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 黄金三色：Primary 电光青 · Secondary 蓝灰 · Alert 赛事红 */
+@layer base {
+  :root {
+    --primary: #06b6d4;
+    --primary-dark: #0891b2;
+    --primary-deeper: #0e7490;
+    --primary-muted: rgba(6, 182, 212, 0.14);
+    --primary-surface: #f0f9fa;
+    --primary-glow: #f4fbfb;
+
+    --secondary-bg: #f8fafc;
+    --secondary-border: #e2e8f0;
+    --secondary-text: #64748b;
+    --ink: #1a1a1a;
+
+    --alert-top: #ff3b30;
+    --alert-bottom: #d32f2f;
+    --alert-glow: rgba(255, 59, 48, 0.35);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply antialiased;
+    background-color: var(--secondary-bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    overscroll-behavior: none;
+  }
+  #root {
+    @apply min-h-[100dvh] max-w-md mx-auto shadow-xl;
+    background-color: #ffffff;
+  }
+}
+
+@layer components {
+  .ai-bubble {
+    background: linear-gradient(145deg, #ffffff 0%, var(--primary-glow) 100%);
+    border: 1px solid var(--secondary-border);
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, 0.05),
+      -3px -3px 14px rgba(6, 182, 212, 0.07);
+  }
+
+  .user-bubble {
+    background: linear-gradient(160deg, var(--primary) 0%, var(--primary-dark) 100%);
+    box-shadow: 0 2px 8px rgba(6, 182, 212, 0.35);
+  }
+
+  .sos-sphere {
+    background: linear-gradient(180deg, var(--alert-top) 0%, var(--alert-bottom) 100%);
+    box-shadow:
+      0 10px 28px rgba(211, 47, 47, 0.42),
+      0 0 0 0 var(--alert-glow);
+  }
+
+  .notice-bar {
+    background: var(--primary-surface);
+    border-left: 3px solid var(--primary);
+    border-top: 1px solid rgba(6, 182, 212, 0.08);
+    border-right: 1px solid rgba(6, 182, 212, 0.08);
+    border-bottom: 1px solid rgba(6, 182, 212, 0.08);
+  }
+
+  .shortcut-icon-wrap {
+    background: linear-gradient(135deg, var(--primary-muted) 0%, rgba(8, 145, 178, 0.08) 100%);
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  .safe-top {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .text-primary {
+    color: var(--primary-dark);
+  }
+  .text-highlight {
+    color: var(--primary);
+  }
+}
