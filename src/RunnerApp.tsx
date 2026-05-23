@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 
 import { ChatPanel } from "@/components/ChatPanel";
+import { IdentityVerifyBanner } from "@/components/identity/IdentityVerifyBanner";
+import { IdentityVerifySheet } from "@/components/identity/IdentityVerifySheet";
 import { NotificationBar } from "@/components/NotificationBar";
 import { PhaseBadge } from "@/components/PhaseBadge";
 import { PickupGuideSheet } from "@/components/modals/PickupGuideSheet";
@@ -32,9 +34,12 @@ export default function RunnerApp({ eventGuid }: Props) {
     error,
     apiConnected,
     h5QuickQuestions,
+    identityVerified,
+    verifyIdentity,
   } = useRunnerContext(eventGuid);
 
   const [runner, setRunner] = useState(initialRunner);
+  const [verifyOpen, setVerifyOpen] = useState(false);
 
   useEffect(() => {
     setRunner(initialRunner);
@@ -44,6 +49,8 @@ export default function RunnerApp({ eventGuid }: Props) {
   const [pickupOpen, setPickupOpen] = useState(false);
   const [sosOpen, setSosOpen] = useState(false);
   const [sosToast, setSosToast] = useState<string | null>(null);
+
+  const openVerify = () => setVerifyOpen(true);
 
   if (loading) {
     return (
@@ -69,6 +76,10 @@ export default function RunnerApp({ eventGuid }: Props) {
     : undefined;
 
   const handleShortcut = (id: string) => {
+    if (id === "info" && !identityVerified) {
+      openVerify();
+      return;
+    }
     if (id === "info") setSheet("info");
     if (id === "map") setSheet("map");
     if (id === "result") setSheet("result");
@@ -76,6 +87,10 @@ export default function RunnerApp({ eventGuid }: Props) {
   };
 
   const handleNoticeClick = (noticePhase: H5Phase) => {
+    if (noticePhase === "pre" && !identityVerified) {
+      openVerify();
+      return;
+    }
     if (noticePhase === "pre") setPickupOpen(true);
     else if (noticePhase === "post") setSheet("result");
     else setSheet("map");
@@ -93,8 +108,21 @@ export default function RunnerApp({ eventGuid }: Props) {
           <p className="text-2xs text-secondary font-medium">对麦智能 · 选手助手</p>
           <p className="text-sm font-bold text-ink truncate">{event.name}</p>
         </div>
-        <PhaseBadge phase={phase} />
+        <div className="shrink-0 flex items-center gap-2">
+          {!identityVerified && (
+            <button
+              type="button"
+              onClick={openVerify}
+              className="text-2xs font-bold text-primary px-2 py-1 rounded-full border border-primary/30 bg-primary-surface"
+            >
+              身份验证
+            </button>
+          )}
+          <PhaseBadge phase={phase} />
+        </div>
       </header>
+
+      {!identityVerified && <IdentityVerifyBanner onVerify={openVerify} />}
 
       <NotificationBar event={event} onClick={handleNoticeClick} />
       <ShortcutGrid onSelect={handleShortcut} />
@@ -108,13 +136,25 @@ export default function RunnerApp({ eventGuid }: Props) {
         h5QuickQuestions={h5QuickQuestions}
       />
 
-      <SosFloatingButton onTriggered={() => setSosOpen(true)} />
+      <SosFloatingButton
+        disabled={!identityVerified}
+        onTriggered={() => setSosOpen(true)}
+        onDisabledTap={openVerify}
+      />
       <SosFlowModal
         open={sosOpen}
         runner={runner}
         apiConnected={apiConnected}
         onClose={() => setSosOpen(false)}
         onSubmitted={onSosSubmitted}
+      />
+
+      <IdentityVerifySheet
+        open={verifyOpen}
+        eventGuid={eventGuid}
+        eventName={event.name}
+        onClose={() => setVerifyOpen(false)}
+        onVerified={verifyIdentity}
       />
 
       <PickupGuideSheet

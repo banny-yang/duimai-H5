@@ -1,4 +1,9 @@
 import { apiGet, apiPost, setRunnerToken } from "@/lib/api-client";
+import {
+  clearStoredIdentity,
+  saveStoredIdentity,
+  type StoredRunnerIdentity,
+} from "@/lib/runner-identity";
 import { resolveH5Phase } from "@/lib/event-phase";
 import type { EventInfo, H5Phase, RunnerProfile } from "@/types";
 
@@ -243,6 +248,33 @@ export async function enterSession(eventGuid: string) {
   setRunnerToken(data.token);
   if (data.eventGuid) setStoredEventGuid(data.eventGuid);
   return data;
+}
+
+/** 参赛号 + 身份证后6位验证，签发选手 JWT 并写入本地身份缓存 */
+export async function bindRunnerIdentity(
+  eventGuid: string,
+  bibNumber: string,
+  idCardSuffix: string,
+): Promise<SessionEnterVO> {
+  const data = await apiPost<SessionEnterVO>(
+    "/runner/session/bind",
+    { eventGuid, bibNumber: bibNumber.trim(), idCardSuffix: idCardSuffix.trim() },
+    false,
+  );
+  setRunnerToken(data.token);
+  if (data.eventGuid) setStoredEventGuid(data.eventGuid);
+  const stored: StoredRunnerIdentity = {
+    eventGuid: data.eventGuid ?? eventGuid,
+    bibNumber: bibNumber.trim(),
+    idCardSuffix: idCardSuffix.trim(),
+    savedAt: new Date().toISOString(),
+  };
+  saveStoredIdentity(stored);
+  return data;
+}
+
+export function forgetRunnerIdentity(eventGuid: string) {
+  clearStoredIdentity(eventGuid);
 }
 
 export async function fetchNotice(eventGuid?: string) {

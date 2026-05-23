@@ -1,17 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
+  bindRunnerIdentity,
   enterSession,
   fetchNotice,
   fetchH5QuickQuestions,
   fetchPublicEvent,
+  forgetRunnerIdentity,
   mapPublicToEvent,
   mapSessionToRunner,
   setStoredEventGuid,
 } from "@/api/runner-api";
+import type { H5QuickQuestions, SessionEnterVO } from "@/api/runner-api";
 import { ApiError } from "@/lib/api-client";
-import type { H5QuickQuestions } from "@/api/runner-api";
 import { readPhaseOverride, resolveH5Phase } from "@/lib/event-phase";
+import { getStoredIdentity } from "@/lib/runner-identity";
 import type { EventInfo, H5Phase, RunnerProfile } from "@/types";
 
 const EMPTY_RUNNER: RunnerProfile = {
@@ -44,10 +47,12 @@ export interface RunnerContextState {
   eventStatus: string | null;
   h5QuickQuestions: H5QuickQuestions | null;
   aiEnabled: boolean;
-  visitor: boolean;
+  /** 是否已完成参赛号+身份证验证（含本地缓存自动恢复） */
+  identityVerified: boolean;
   loading: boolean;
   error: string | null;
   apiConnected: boolean;
+  verifyIdentity: (bibNumber: string, idCardSuffix: string) => Promise<void>;
 }
 
 export function useRunnerContext(eventGuidFromRoute: string): RunnerContextState {
@@ -61,10 +66,35 @@ export function useRunnerContext(eventGuidFromRoute: string): RunnerContextState
   const [eventStatus, setEventStatus] = useState<string | null>(null);
   const [h5QuickQuestions, setH5QuickQuestions] = useState<H5QuickQuestions | null>(null);
   const [aiEnabled, setAiEnabled] = useState(false);
-  const [visitor, setVisitor] = useState(false);
+  const [identityVerified, setIdentityVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [apiConnected, setApiConnected] = useState(false);
+
+  const applySession = useCallback((session: SessionEnterVO) => {
+    setRunner(mapSessionToRunner(session));
+    setGreeting(session.greeting ?? "");
+    setIdentityVerified(session.visitor !== true);
+  }, []);
+
+  const tryRestoreIdentity = useCallback(
+    async (guid: string, session: SessionEnterVO): Promise<SessionEnterVO> => {
+      if (session.visitor !== true) return session;
+      const stored = getStoredIdentity(guid);
+      if (!stored) return session;
+      try {
+        return await bindRunnerIdentity(
+          stored.eventGuid,
+          stored.bibNumber,
+          stored.idCardSuffix,
+        );
+      } catch {
+        forgetRunnerIdentity(guid);
+        return session;
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -77,16 +107,18 @@ export function useRunnerContext(eventGuidFromRoute: string): RunnerContextState
       try {
         setStoredEventGuid(eventGuidParam);
 
-        const [pub, session, quickQuestions, notice] = await Promise.all([
+        const [pub, quickQuestions] = await Promise.all([
           fetchPublicEvent(eventGuidParam),
-          enterSession(eventGuidParam),
           fetchH5QuickQuestions(eventGuidParam),
-          fetchNotice(eventGuidParam).catch(() => undefined),
         ]);
+
+        let session = await enterSession(eventGuidParam);
+        session = await tryRestoreIdentity(eventGuidParam, session);
+
+        const notice = await fetchNotice(eventGuidParam).catch(() => undefined);
 
         if (cancelled) return;
 
-        const r = mapSessionToRunner(session);
         const baseEvent = mapPublicToEvent(pub, notice);
         const phase = resolveH5Phase({
           eventDate: pub.eventDate,
@@ -94,15 +126,13 @@ export function useRunnerContext(eventGuidFromRoute: string): RunnerContextState
           apiPhase: pub.phase,
           phaseOverride,
         });
-        const e = { ...baseEvent, phase };
-        setRunner(r);
-        setEvent(e);
-        setGreeting(session.greeting ?? "");
+
+        applySession(session);
+        setEvent({ ...baseEvent, phase });
         setEventGuid(pub.eventGuid);
         setEventStatus(pub.status ?? null);
         setH5QuickQuestions(quickQuestions);
         setAiEnabled(pub.aiEnabled);
-        setVisitor(session.visitor === true);
         setApiConnected(true);
       } catch (e) {
         if (cancelled) return;
@@ -121,7 +151,7 @@ export function useRunnerContext(eventGuidFromRoute: string): RunnerContextState
         setEventStatus(null);
         setH5QuickQuestions(null);
         setAiEnabled(false);
-        setVisitor(false);
+        setIdentityVerified(false);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -130,7 +160,19 @@ export function useRunnerContext(eventGuidFromRoute: string): RunnerContextState
     return () => {
       cancelled = true;
     };
-  }, [eventGuidParam, phaseOverride]);
+  }, [eventGuidParam, phaseOverride, applySession, tryRestoreIdentity]);
+
+  const verifyIdentity = useCallback(
+    async (bibNumber: string, idCardSuffix: string) => {
+      const session = await bindRunnerIdentity(
+        eventGuidParam,
+        bibNumber,
+        idCardSuffix,
+      );
+      applySession(session);
+    },
+    [eventGuidParam, applySession],
+  );
 
   const phase = resolveH5Phase({
     eventDate: event.eventDate,
@@ -148,9 +190,10 @@ export function useRunnerContext(eventGuidFromRoute: string): RunnerContextState
     eventStatus,
     h5QuickQuestions,
     aiEnabled,
-    visitor,
+    identityVerified,
     loading,
     error,
     apiConnected,
+    verifyIdentity,
   };
 }
