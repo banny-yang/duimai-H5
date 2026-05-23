@@ -27,6 +27,9 @@ export interface EventInfo {
   raceNotice: string;
   postNotice: string;
   actionHint?: string;
+  /** 危机应急广播（优先于赛段通知展示） */
+  emergencyNotice?: string | null;
+  emergencyActive?: boolean;
 }
 
 export type ChatCardType = "supply" | "bib" | "text";

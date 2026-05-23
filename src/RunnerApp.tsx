@@ -87,6 +87,9 @@ export default function RunnerApp({ eventGuid }: Props) {
   };
 
   const handleNoticeClick = (noticePhase: H5Phase) => {
+    if (event.emergencyActive) {
+      return;
+    }
     if (noticePhase === "pre" && !identityVerified) {
       openVerify();
       return;

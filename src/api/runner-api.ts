@@ -92,6 +92,7 @@ export interface NoticeVO {
   phase: string;
   text: string;
   actionHint: string;
+  emergency?: boolean;
 }
 
 export interface ProfileVO {
@@ -160,10 +161,29 @@ export function mapPublicToEvent(pub: PublicEventVO, notice?: NoticeVO): EventIn
   const fallbackPost = "赛事已结束，可查询成绩、接驳与赛后服务。";
   const noticePhase = notice?.phase;
   const noticeText = notice?.text;
+  const isEmergency = notice?.emergency === true && !!noticeText?.trim();
+
+  if (isEmergency) {
+    const text = noticeText!.trim();
+    return {
+      name: pub.eventName,
+      phase,
+      eventDate: pub.eventDate ?? null,
+      emergencyNotice: text,
+      emergencyActive: true,
+      preNotice: text,
+      raceNotice: text,
+      postNotice: text,
+      actionHint: notice?.actionHint ?? "点击查看应急通知 ›",
+    };
+  }
+
   return {
     name: pub.eventName,
     phase,
     eventDate: pub.eventDate ?? null,
+    emergencyNotice: null,
+    emergencyActive: false,
     preNotice:
       noticePhase === "pre" && noticeText ? noticeText : fallbackPre,
     raceNotice:
@@ -172,6 +192,24 @@ export function mapPublicToEvent(pub: PublicEventVO, notice?: NoticeVO): EventIn
       noticePhase === "post" && noticeText ? noticeText : fallbackPost,
     actionHint: notice?.actionHint,
   };
+}
+
+/** 将最新通知合并进已有 EventInfo（保留 phase 等字段） */
+export function applyNoticeToEvent(event: EventInfo, notice?: NoticeVO): EventInfo {
+  const merged = mapPublicToEvent(
+    {
+      eventGuid: "",
+      eventId: "",
+      eventName: event.name,
+      phase: event.phase,
+      eventDate: event.eventDate,
+      status: "",
+      aiEnabled: true,
+      agent: { assistantName: "" },
+    },
+    notice,
+  );
+  return { ...event, ...merged, phase: event.phase };
 }
 
 export function mergeProfile(base: RunnerProfile, p: ProfileVO): RunnerProfile {
