@@ -3,14 +3,12 @@ import { cn } from "@/lib/cn";
 
 interface Props {
   onSend: (text: string) => void;
-  onVoiceResult?: (text: string) => void;
   disabled?: boolean;
 }
 
-export function ChatInput({ onSend, onVoiceResult, disabled }: Props) {
+export function ChatInput({ onSend, disabled }: Props) {
   const [text, setText] = useState("");
   const [focused, setFocused] = useState(false);
-  const [recording, setRecording] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasText = text.length > 0;
   const canSend = hasText && !disabled;
@@ -22,32 +20,17 @@ export function ChatInput({ onSend, onVoiceResult, disabled }: Props) {
     setText("");
   };
 
-  const handleVoice = () => {
-    if (disabled || recording) return;
-    setRecording(true);
-    window.setTimeout(() => {
-      setRecording(false);
-      const mock = "最近的补给点在哪？";
-      onVoiceResult?.(mock);
-      onSend(mock);
-    }, 2000);
-  };
-
   return (
     <div className="border-t border-secondary-border bg-white safe-bottom px-3 py-2.5 z-30 relative">
       <div className="flex items-end gap-2">
         <button
           type="button"
-          aria-label="语音输入"
-          disabled={disabled}
-          onClick={handleVoice}
-          className={cn(
-            "shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl text-white",
-            recording ? "bg-alert scale-110" : "bg-primary active:bg-primary-dark",
-            "disabled:bg-secondary-border disabled:text-secondary",
-          )}
+          aria-label="语音输入暂未开通"
+          disabled
+          title="语音输入暂未开通"
+          className="shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl bg-secondary-border text-secondary cursor-not-allowed"
         >
-          {recording ? "···" : "🎤"}
+          🎤
         </button>
         <input
           ref={inputRef}
@@ -56,7 +39,7 @@ export function ChatInput({ onSend, onVoiceResult, disabled }: Props) {
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onKeyDown={(e) => e.key === "Enter" && canSend && submit()}
-          placeholder="打字提问或点麦克风"
+          placeholder="输入问题，由 AI 助手回答"
           disabled={disabled}
           className={cn(
             "flex-1 min-h-12 rounded-2xl border-2 px-4 text-[15px] text-ink font-medium transition-colors",
@@ -78,11 +61,6 @@ export function ChatInput({ onSend, onVoiceResult, disabled }: Props) {
           发送
         </button>
       </div>
-      {recording && (
-        <p className="text-center text-2xs text-alert font-medium mt-1.5 animate-pulse">
-          正在聆听…（模拟语音转文字）
-        </p>
-      )}
     </div>
   );
 }

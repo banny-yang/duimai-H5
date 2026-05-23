@@ -19,6 +19,7 @@ export const MOCK_EVENT: EventInfo = {
   preNotice: "距离2026成都马拉松开跑还有 14 小时，请尽快领取参赛包。",
   raceNotice:
     "突发：由于前方赛道突降暴雨，请注意脚下防滑，最近补给点在 1.5 公里后。",
+  postNotice: "赛事已结束，可查询成绩、接驳与赛后服务。",
 };
 
 export const PRE_PROMPTS = [

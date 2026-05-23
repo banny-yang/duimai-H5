@@ -1,6 +1,6 @@
 # 对麦智能 · 选手端 H5
 
-轻量选手端移动端页面（Vite + React + Tailwind），已对接 **duimai-frontend-service**（8091）；后端不可用时自动降级为本地演示数据。
+轻量选手端移动端页面（Vite + React + Tailwind），已对接 **duimai-frontend-service**（8091）；AI 对话与赛事数据均来自后端，不可用时报错提示。
 
 ## UI 优化（见 `optimization.md` 及 PM 迭代）
 
@@ -14,8 +14,8 @@
 ## 功能概览
 
 - **首页 Hub**：动态赛前/赛中通知栏、四大金刚区快捷键
-- **AI 对话流**：免登录问候、快捷联想气泡、语音输入（模拟 STT）、SSE 打字机式回复（模拟）
-- **结构化卡片**：补给站导航卡、领物条形码卡
+- **AI 对话流**：免登录问候、快捷联想气泡、对接 `POST /api/runner/chat` 流式展示回复
+- **AI 对话**：直接展示后端 `answer` 原文（Markdown 轻量渲染）
 - **SOS**：右下角浮窗长按 3 秒、GPS/电量模拟、伤情三选一、5 秒无操作默认最高级别
 
 ## 开发
@@ -37,10 +37,15 @@ npm run dev
 
 浏览器打开 http://localhost:5180（Vite 将 `/api` 代理到 `http://localhost:8091`）
 
+- **无赛事 GUID**（根路径 `/`）：展示平台**审核通过**的赛事列表（`published` / `finished`），点击后进入 `/{event_guid}` 交互页
+- **带 GUID**（`/{event_guid}`）：直接进入该赛事选手助手
+
 ### 对接 API
 
 | 能力 | 接口 |
 |------|------|
+| 可选赛事列表 | `GET /api/runner/event/list` |
+| H5 常用问题 | `GET /api/runner/event/quick-questions?eventGuid=` |
 | 进入赛事 / JWT | `GET /api/runner/session/enter?eventGuid=` |
 | 通知条 | `GET /api/runner/session/notice` |
 | 我的参赛信息 | `GET /api/runner/profile/me` |
@@ -59,7 +64,8 @@ http://localhost:5180/57c01d8b-55a3-11f1-b8af-562bf5f97a91
 
 | 部分 | 说明 |
 |------|------|
-| 路径 `/{event_guid}` | **必填**，赛事公开 UUID |
+| 根路径 `/` | 无 GUID 时展示赛事列表供选择 |
+| 路径 `/{event_guid}` | 进入指定赛事（二维码/链接直达） |
 | `?phase=race` | 可选，强制赛中 UI（覆盖赛事状态） |
 
 旧版 `/?event_guid=` 会自动跳转到 `/{guid}`。

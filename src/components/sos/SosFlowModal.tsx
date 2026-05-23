@@ -184,42 +184,33 @@ export function SosFlowModal({ open, runner, apiConnected, onClose, onSubmitted 
 
 
 
-      let serverMessage: string | undefined;
-
-      if (apiConnected) {
-
-        try {
-
-          const res = await submitSos({
-
-            lat: payload.gps.lat,
-
-            lng: payload.gps.lng,
-
-            battery: payload.battery,
-
-            signal: payload.signal,
-
-            symptomKey: symptom,
-
-          });
-
-          serverMessage = res.message;
-
-        } catch (e) {
-
-          serverMessage =
-
-            e instanceof ApiError ? `${e.message}（本地已记录）` : "上报失败（本地已记录）";
-
-        }
-
+      if (!apiConnected) {
+        submittedRef.current = false;
+        setSubmitting(false);
+        onSubmitted(payload, "未连接后端，SOS 上报失败");
+        return;
       }
 
-
+      let serverMessage: string;
+      try {
+        const res = await submitSos({
+          lat: payload.gps.lat,
+          lng: payload.gps.lng,
+          battery: payload.battery,
+          signal: payload.signal,
+          symptomKey: symptom,
+        });
+        serverMessage = res.message;
+      } catch (e) {
+        submittedRef.current = false;
+        setSubmitting(false);
+        serverMessage =
+          e instanceof ApiError ? e.message : "SOS 上报失败，请稍后重试";
+        onSubmitted(payload, serverMessage);
+        return;
+      }
 
       setStep("done");
-
       onSubmitted(payload, serverMessage);
 
       setSubmitting(false);

@@ -1,240 +1,156 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-
   enterSession,
-
   fetchNotice,
-
+  fetchH5QuickQuestions,
   fetchPublicEvent,
-
   mapPublicToEvent,
-
   mapSessionToRunner,
-
-  readEventGuidFromUrl,
-
-  redirectLegacyEventGuidUrl,
-
   setStoredEventGuid,
-
 } from "@/api/runner-api";
-
 import { ApiError } from "@/lib/api-client";
+import type { H5QuickQuestions } from "@/api/runner-api";
+import { readPhaseOverride, resolveH5Phase } from "@/lib/event-phase";
+import type { EventInfo, H5Phase, RunnerProfile } from "@/types";
 
-import { MOCK_EVENT, MOCK_RUNNER } from "@/mock/data";
+const EMPTY_RUNNER: RunnerProfile = {
+  id: "",
+  name: "",
+  bib: "",
+  zone: "",
+  bloodType: "",
+  pickupWindow: "",
+  pickupCounter: "",
+  emergencyContact: "",
+  emergencyPhone: "",
+  checkInBefore: "",
+};
 
-import type { EventInfo, RacePhase, RunnerProfile } from "@/types";
-
-
-
-function readPhaseOverride(): RacePhase | undefined {
-
-  const p = new URLSearchParams(window.location.search).get("phase");
-
-  return p === "race" ? "race" : p === "pre" ? "pre" : undefined;
-
-}
-
-
+const EMPTY_EVENT: EventInfo = {
+  name: "",
+  phase: "pre",
+  preNotice: "",
+  raceNotice: "",
+  postNotice: "",
+};
 
 export interface RunnerContextState {
-
   runner: RunnerProfile;
-
   event: EventInfo;
-
-  phase: RacePhase;
-
+  phase: H5Phase;
   greeting: string;
-
   eventGuid: string | null;
-
+  eventStatus: string | null;
+  h5QuickQuestions: H5QuickQuestions | null;
   aiEnabled: boolean;
-
   visitor: boolean;
-
   loading: boolean;
-
   error: string | null;
-
   apiConnected: boolean;
-
 }
 
-
-
-export function useRunnerContext(): RunnerContextState {
-
-  redirectLegacyEventGuidUrl();
-
-  const eventGuidParam = useMemo(() => readEventGuidFromUrl(), []);
-
+export function useRunnerContext(eventGuidFromRoute: string): RunnerContextState {
+  const eventGuidParam = eventGuidFromRoute;
   const phaseOverride = useMemo(() => readPhaseOverride(), []);
 
-
-
-  const [runner, setRunner] = useState<RunnerProfile>(MOCK_RUNNER);
-
-  const [event, setEvent] = useState<EventInfo>(MOCK_EVENT);
-
+  const [runner, setRunner] = useState<RunnerProfile>(EMPTY_RUNNER);
+  const [event, setEvent] = useState<EventInfo>(EMPTY_EVENT);
   const [greeting, setGreeting] = useState("");
-
   const [eventGuid, setEventGuid] = useState<string | null>(eventGuidParam ?? null);
-
+  const [eventStatus, setEventStatus] = useState<string | null>(null);
+  const [h5QuickQuestions, setH5QuickQuestions] = useState<H5QuickQuestions | null>(null);
   const [aiEnabled, setAiEnabled] = useState(false);
-
   const [visitor, setVisitor] = useState(false);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState<string | null>(null);
-
   const [apiConnected, setApiConnected] = useState(false);
 
-
-
   useEffect(() => {
-
     let cancelled = false;
 
-
-
     (async () => {
-
       setLoading(true);
-
       setError(null);
+      setApiConnected(false);
 
       try {
-
-        if (!eventGuidParam) {
-
-          throw new ApiError("URL 缺少赛事 GUID，请使用 /{event_guid} 格式", 400);
-
-        }
-
         setStoredEventGuid(eventGuidParam);
 
-
-
-        const pub = await fetchPublicEvent(eventGuidParam);
-
-        const session = await enterSession(eventGuidParam);
-
-        const notice = await fetchNotice(eventGuidParam).catch(() => undefined);
-
-
+        const [pub, session, quickQuestions, notice] = await Promise.all([
+          fetchPublicEvent(eventGuidParam),
+          enterSession(eventGuidParam),
+          fetchH5QuickQuestions(eventGuidParam),
+          fetchNotice(eventGuidParam).catch(() => undefined),
+        ]);
 
         if (cancelled) return;
-
-
 
         const r = mapSessionToRunner(session);
-
-        let e = mapPublicToEvent(pub, notice);
-
-        if (phaseOverride) {
-
-          e = { ...e, phase: phaseOverride };
-
-        }
-
+        const baseEvent = mapPublicToEvent(pub, notice);
+        const phase = resolveH5Phase({
+          eventDate: pub.eventDate,
+          eventStatus: pub.status,
+          apiPhase: pub.phase,
+          phaseOverride,
+        });
+        const e = { ...baseEvent, phase };
         setRunner(r);
-
         setEvent(e);
-
         setGreeting(session.greeting ?? "");
-
         setEventGuid(pub.eventGuid);
-
+        setEventStatus(pub.status ?? null);
+        setH5QuickQuestions(quickQuestions);
         setAiEnabled(pub.aiEnabled);
-
-        setVisitor(session.visitor);
-
+        setVisitor(session.visitor === true);
         setApiConnected(true);
-
       } catch (e) {
-
         if (cancelled) return;
-
         const msg =
-
           e instanceof ApiError
-
             ? e.message
-
             : e instanceof Error
-
               ? e.message
-
               : "无法连接选手端服务";
-
         setError(msg);
-
         setApiConnected(false);
-
-        const phase = phaseOverride ?? MOCK_EVENT.phase;
-
-        setRunner(MOCK_RUNNER);
-
-        setEvent({ ...MOCK_EVENT, phase });
-
+        setRunner(EMPTY_RUNNER);
+        setEvent(EMPTY_EVENT);
         setGreeting("");
-
         setEventGuid(eventGuidParam ?? null);
-
+        setEventStatus(null);
+        setH5QuickQuestions(null);
         setAiEnabled(false);
-
         setVisitor(false);
-
       } finally {
-
         if (!cancelled) setLoading(false);
-
       }
-
     })();
 
-
-
     return () => {
-
       cancelled = true;
-
     };
-
   }, [eventGuidParam, phaseOverride]);
 
-
-
-  const phase = phaseOverride ?? event.phase;
-
-
+  const phase = resolveH5Phase({
+    eventDate: event.eventDate,
+    eventStatus: eventStatus,
+    apiPhase: event.phase,
+    phaseOverride,
+  });
 
   return {
-
     runner,
-
     event: { ...event, phase },
-
     phase,
-
     greeting,
-
     eventGuid,
-
+    eventStatus,
+    h5QuickQuestions,
     aiEnabled,
-
     visitor,
-
     loading,
-
     error,
-
     apiConnected,
-
   };
-
 }
-

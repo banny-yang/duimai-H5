@@ -55,8 +55,10 @@ export async function apiGet<T>(
     });
   }
   const headers: Record<string, string> = { Accept: "application/json" };
-  const token = getRunnerToken();
-  if (auth && token) headers.Authorization = `Bearer ${token}`;
+  if (auth) {
+    const token = getRunnerToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
 
   const res = await fetch(url.toString(), { method: "GET", headers });
   const body = await parseJson<T>(res);
@@ -75,8 +77,10 @@ export async function apiPost<T>(
     Accept: "application/json",
     "Content-Type": "application/json",
   };
-  const token = getRunnerToken();
-  if (auth && token) headers.Authorization = `Bearer ${token}`;
+  if (auth) {
+    const token = getRunnerToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
 
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",

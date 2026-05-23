@@ -1,252 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { ChatPanel } from "@/components/ChatPanel";
-
-import { NotificationBar } from "@/components/NotificationBar";
-
-import { PhaseBadge } from "@/components/PhaseBadge";
-
-import { PickupGuideSheet } from "@/components/modals/PickupGuideSheet";
-
-import { ResultSheet } from "@/components/modals/ResultSheet";
-
-import { RouteMapSheet } from "@/components/modals/RouteMapSheet";
-
-import { RunnerInfoSheet } from "@/components/modals/RunnerInfoSheet";
-
-import { ShuttleSheet } from "@/components/modals/ShuttleSheet";
-
-import { ShortcutGrid } from "@/components/ShortcutGrid";
-
-import { SosFloatingButton } from "@/components/sos/SosFloatingButton";
-
-import { SosFlowModal } from "@/components/sos/SosFlowModal";
-
-import { useRunnerContext } from "@/hooks/useRunnerContext";
-
-import type { RacePhase, RunnerProfile, SosPayload } from "@/types";
-
-
-
-type Sheet = "info" | "map" | "result" | "shuttle" | null;
-
-
+import { EventPickerPage } from "@/components/EventPickerPage";
+import {
+  readEventGuidFromUrl,
+  redirectLegacyEventGuidUrl,
+} from "@/api/runner-api";
+import RunnerApp from "@/RunnerApp";
 
 export default function App() {
+  redirectLegacyEventGuidUrl();
 
-  const {
-    runner: initialRunner,
-    event,
-    phase,
-    greeting,
-    eventGuid,
-    aiEnabled,
-    loading,
-    error,
-    apiConnected,
-  } = useRunnerContext();
-
-  const [runner, setRunner] = useState(initialRunner);
+  const initialGuid = useMemo(() => readEventGuidFromUrl(), []);
+  const [eventGuid, setEventGuid] = useState<string | undefined>(initialGuid);
 
   useEffect(() => {
-    setRunner(initialRunner);
-  }, [initialRunner]);
+    const onPop = () => setEventGuid(readEventGuidFromUrl());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
-  const [sheet, setSheet] = useState<Sheet>(null);
-
-  const [pickupOpen, setPickupOpen] = useState(false);
-
-  const [sosOpen, setSosOpen] = useState(false);
-
-  const [sosToast, setSosToast] = useState<string | null>(null);
-
-
-
-  if (loading) {
-
-    return (
-
-      <div className="flex flex-col min-h-[100dvh] items-center justify-center bg-white px-6">
-
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-
-        <p className="mt-4 text-sm text-secondary font-medium">正在加载赛事…</p>
-
-      </div>
-
-    );
-
+  if (!eventGuid) {
+    return <EventPickerPage />;
   }
 
-
-
-  const handleShortcut = (id: string) => {
-
-    if (id === "info") setSheet("info");
-
-    if (id === "map") setSheet("map");
-
-    if (id === "result") setSheet("result");
-
-    if (id === "shuttle") setSheet("shuttle");
-
-  };
-
-
-
-  const handleNoticeClick = (noticePhase: RacePhase) => {
-
-    if (noticePhase === "pre") setPickupOpen(true);
-
-    else setSheet("map");
-
-  };
-
-
-
-  const onSosSubmitted = (_payload: SosPayload, serverMessage?: string) => {
-
-    setSosToast(serverMessage ?? "救援请求已受理");
-
-    window.setTimeout(() => setSosToast(null), 3000);
-
-  };
-
-
-
-  return (
-
-    <div className="flex flex-col min-h-[100dvh] relative bg-white">
-
-      <header className="shrink-0 border-b border-secondary-border bg-white px-3 py-2.5 flex items-center justify-between safe-top">
-
-        <div className="min-w-0">
-
-          <p className="text-2xs text-secondary font-medium">对麦智能 · 选手助手</p>
-
-          <p className="text-sm font-bold text-ink truncate">{event.name}</p>
-
-        </div>
-
-        <PhaseBadge phase={phase} />
-
-      </header>
-
-
-
-      {error && !apiConnected && (
-
-        <p className="mx-3 mt-2 text-2xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
-
-          无法连接后端（{error}），当前为离线演示数据
-
-        </p>
-
-      )}
-
-
-
-      <NotificationBar event={event} onClick={handleNoticeClick} />
-
-      <ShortcutGrid onSelect={handleShortcut} />
-
-
-
-      <ChatPanel
-
-        phase={phase}
-
-        runner={runner}
-
-        greeting={greeting}
-
-        apiConnected={apiConnected && aiEnabled}
-
-      />
-
-
-
-      <SosFloatingButton onTriggered={() => setSosOpen(true)} />
-
-      <SosFlowModal
-
-        open={sosOpen}
-
-        runner={runner}
-
-        apiConnected={apiConnected}
-
-        onClose={() => setSosOpen(false)}
-
-        onSubmitted={onSosSubmitted}
-
-      />
-
-
-
-      <PickupGuideSheet
-
-        open={pickupOpen}
-
-        runner={runner}
-
-        onClose={() => setPickupOpen(false)}
-
-        onViewMap={() => setSheet("map")}
-
-      />
-
-      <RunnerInfoSheet
-
-        open={sheet === "info"}
-
-        runner={runner}
-
-        apiConnected={apiConnected}
-
-        onClose={() => setSheet(null)}
-
-        onRunnerUpdate={setRunner}
-
-      />
-
-      <RouteMapSheet open={sheet === "map"} onClose={() => setSheet(null)} />
-
-      <ResultSheet open={sheet === "result"} onClose={() => setSheet(null)} />
-
-      <ShuttleSheet open={sheet === "shuttle"} onClose={() => setSheet(null)} />
-
-
-
-      {sosToast && (
-
-        <div
-
-          className="fixed top-16 left-1/2 -translate-x-1/2 z-[70] text-white text-sm font-semibold px-4 py-2 rounded-full shadow-alert-glow"
-
-          style={{ background: "linear-gradient(180deg, #ff3b30, #d32f2f)" }}
-
-        >
-
-          {sosToast}
-
-        </div>
-
-      )}
-
-
-
-      <p className="shrink-0 text-center text-2xs text-slate-300 py-1 pointer-events-none">
-
-        {apiConnected ? "已对接 · 8091" : "离线演示"}
-        {eventGuid ? ` · ${eventGuid.slice(0, 8)}…` : ""} · ?phase=race
-
-      </p>
-
-    </div>
-
-  );
-
+  return <RunnerApp eventGuid={eventGuid} />;
 }
-
-

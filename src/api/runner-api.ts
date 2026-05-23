@@ -1,5 +1,6 @@
 import { apiGet, apiPost, setRunnerToken } from "@/lib/api-client";
-import type { EventInfo, RacePhase, RunnerProfile } from "@/types";
+import { resolveH5Phase } from "@/lib/event-phase";
+import type { EventInfo, H5Phase, RunnerProfile } from "@/types";
 
 const EVENT_GUID_KEY = "duimai_event_guid";
 
@@ -59,11 +60,19 @@ export interface SessionEnterVO {
   checkInBefore: string;
 }
 
+export interface H5QuickQuestions {
+  pre?: string[];
+  race?: string[];
+  post?: string[];
+}
+
 export interface PublicEventVO {
   eventGuid: string;
   eventId: string;
   eventName: string;
   phase: string;
+  /** yyyy-MM-dd */
+  eventDate?: string | null;
   status: string;
   aiEnabled: boolean;
   agent: {
@@ -71,6 +80,7 @@ export interface PublicEventVO {
     personality?: string;
     greetingTemplate?: string;
   };
+  h5QuickQuestions?: H5QuickQuestions | null;
 }
 
 export interface NoticeVO {
@@ -135,15 +145,26 @@ export function mapSessionToRunner(s: SessionEnterVO): RunnerProfile {
 }
 
 export function mapPublicToEvent(pub: PublicEventVO, notice?: NoticeVO): EventInfo {
-  const phase = (pub.phase === "race" ? "race" : "pre") as RacePhase;
+  const phase = resolveH5Phase({
+    eventDate: pub.eventDate,
+    eventStatus: pub.status,
+    apiPhase: pub.phase,
+  }) as H5Phase;
   const fallbackPre = `距离${pub.eventName}开跑在即，请尽快领取参赛包。`;
   const fallbackRace = "赛中播报：请注意补给与路况，如需帮助请长按 SOS。";
+  const fallbackPost = "赛事已结束，可查询成绩、接驳与赛后服务。";
+  const noticePhase = notice?.phase;
   const noticeText = notice?.text;
   return {
     name: pub.eventName,
     phase,
-    preNotice: phase === "pre" ? noticeText ?? fallbackPre : fallbackPre,
-    raceNotice: phase === "race" ? noticeText ?? fallbackRace : fallbackRace,
+    eventDate: pub.eventDate ?? null,
+    preNotice:
+      noticePhase === "pre" && noticeText ? noticeText : fallbackPre,
+    raceNotice:
+      noticePhase === "race" && noticeText ? noticeText : fallbackRace,
+    postNotice:
+      noticePhase === "post" && noticeText ? noticeText : fallbackPost,
     actionHint: notice?.actionHint,
   };
 }
@@ -163,8 +184,54 @@ export function mergeProfile(base: RunnerProfile, p: ProfileVO): RunnerProfile {
   };
 }
 
+export interface RunnerEventListItem {
+  eventGuid: string;
+  eventName: string;
+  phase: string;
+  status: string;
+  location?: string | null;
+  eventDate?: string | null;
+  type?: string | null;
+}
+
+/** 进入指定赛事页（保留当前 query，如 ?phase=race） */
+export function navigateToEvent(eventGuid: string) {
+  const qs = window.location.search;
+  const path = `/${eventGuid}${qs}`;
+  window.history.pushState(null, "", path);
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
+/** 平台审核通过后可对 H5 展示的赛事状态 */
+export const H5_APPROVED_EVENT_STATUSES = ["published", "finished"] as const;
+
+export function isH5ApprovedEvent(status?: string | null): boolean {
+  return (
+    status != null &&
+    (H5_APPROVED_EVENT_STATUSES as readonly string[]).includes(status)
+  );
+}
+
+export async function fetchSelectableEvents() {
+  const list = await apiGet<RunnerEventListItem[]>(
+    "/runner/event/list",
+    undefined,
+    false,
+  );
+  return list.filter((e) => isH5ApprovedEvent(e.status));
+}
+
 export async function fetchPublicEvent(eventGuid: string) {
   return apiGet<PublicEventVO>("/runner/event/public", { eventGuid }, false);
+}
+
+/** 选手端 H5 常用问题（赛前/赛中/赛后），来自 duimai-frontend-service */
+export async function fetchH5QuickQuestions(eventGuid: string) {
+  return apiGet<H5QuickQuestions>(
+    "/runner/event/quick-questions",
+    { eventGuid },
+    false,
+  );
 }
 
 export async function enterSession(eventGuid: string) {

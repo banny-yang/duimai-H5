@@ -1,4 +1,7 @@
-export type RacePhase = "pre" | "race";
+/** @deprecated 请使用 H5Phase（含 post） */
+export type RacePhase = "pre" | "race" | "post";
+
+export type H5Phase = "pre" | "race" | "post";
 
 export interface RunnerProfile {
   id: string;
@@ -17,9 +20,12 @@ export interface RunnerProfile {
 
 export interface EventInfo {
   name: string;
-  phase: RacePhase;
+  phase: H5Phase;
+  /** yyyy-MM-dd */
+  eventDate?: string | null;
   preNotice: string;
   raceNotice: string;
+  postNotice: string;
   actionHint?: string;
 }
 
