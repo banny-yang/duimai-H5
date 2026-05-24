@@ -4,6 +4,7 @@ import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
   plugins: [react()],
+  envPrefix: ["VITE_"],
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },
@@ -14,6 +15,7 @@ export default defineConfig({
       "/api": {
         target: "http://localhost:8091",
         changeOrigin: true,
+        ws: true,
       },
     },
   },
@@ -23,6 +25,7 @@ export default defineConfig({
       "/api": {
         target: "http://localhost:8091",
         changeOrigin: true,
+        ws: true,
       },
     },
   },

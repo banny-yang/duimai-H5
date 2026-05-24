@@ -118,6 +118,13 @@ export interface ChatResponseVO {
   conversationId?: string;
 }
 
+export interface ChatInboxMessageVO {
+  id: string;
+  role: string;
+  text: string;
+  createdAt?: number;
+}
+
 export interface SosSubmitRequest {
   lat?: number;
   lng?: number;
@@ -326,6 +333,11 @@ export async function fetchProfile() {
 
 export async function sendChat(req: ChatRequest) {
   return apiPost<ChatResponseVO>("/runner/chat", req);
+}
+
+/** 拉取危机中心人工回复（服务端 drain，每条仅送达一次） */
+export async function fetchChatInbox() {
+  return apiGet<ChatInboxMessageVO[]>("/runner/chat/inbox");
 }
 
 const SYMPTOM_LABEL: Record<string, string> = {

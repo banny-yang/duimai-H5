@@ -4,8 +4,10 @@ import { ChatInput } from "@/components/ChatInput";
 import { ChatMessageItem } from "@/components/ChatMessageItem";
 import { ChatSessionTime } from "@/components/ChatSessionTime";
 import { SuggestedPrompts } from "@/components/SuggestedPrompts";
-import { sendChat } from "@/api/runner-api";
+import { fetchChatInbox, sendChat } from "@/api/runner-api";
 import { ApiError } from "@/lib/api-client";
+import { useRunnerChatSocketState } from "@/hooks/useRunnerChatSocketState";
+import { subscribeRunnerChatHumanReply, subscribeRunnerChatSocketOpen } from "@/lib/runner-chat-ws";
 import { resolveQuickPrompts } from "@/lib/h5-quick-questions";
 import type { H5QuickQuestions } from "@/api/runner-api";
 import type { ChatMessage, H5Phase, RunnerProfile } from "@/types";
@@ -18,7 +20,14 @@ interface Props {
   chatEnabled: boolean;
   chatDisabledHint?: string;
   h5QuickQuestions?: H5QuickQuestions | null;
+  /** 已绑定身份时可轮询人工回复 */
+  inboxPollEnabled?: boolean;
 }
+
+/** WebSocket 未连通时快速拉取 Redis 收件箱 */
+const INBOX_FAST_POLL_MS = 800;
+/** WebSocket 已连通时的低频兜底 */
+const INBOX_BACKUP_POLL_MS = 15000;
 
 function uid() {
   return `m-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -57,6 +66,7 @@ export function ChatPanel({
   chatEnabled,
   chatDisabledHint,
   h5QuickQuestions,
+  inboxPollEnabled = false,
 }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { id: "greet", role: "assistant", text: "", createdAt: initialSessionTime().getTime() },
@@ -65,7 +75,10 @@ export function ChatPanel({
   const [thinking, setThinking] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const conversationIdRef = useRef<string | undefined>();
+  const deliveredInboxIdsRef = useRef<Set<string>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
+  const wsState = useRunnerChatSocketState();
+  const wsOpen = wsState === "open";
   const prompts = resolveQuickPrompts(phase, h5QuickQuestions);
 
   const touchSession = useCallback(() => {
@@ -79,6 +92,72 @@ export function ChatPanel({
   useEffect(() => {
     scrollBottom();
   }, [messages, thinking, scrollBottom]);
+
+  const appendStaffMessages = useCallback(
+    async (items: { id: string; text: string; createdAt?: number }[]) => {
+      for (const item of items) {
+        if (deliveredInboxIdsRef.current.has(item.id)) continue;
+        deliveredInboxIdsRef.current.add(item.id);
+        const fullText = item.text?.trim() ?? "";
+        if (!fullText) continue;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: item.id,
+            role: "staff",
+            text: fullText,
+            createdAt: item.createdAt ?? now(),
+          },
+        ]);
+        touchSession();
+      }
+    },
+    [touchSession],
+  );
+
+  const drainInboxRef = useRef<() => Promise<void>>(async () => {});
+
+  drainInboxRef.current = async () => {
+    try {
+      const inbox = await fetchChatInbox();
+      if (!inbox?.length) return;
+      const fresh = inbox.filter(
+        (m) => m.id && m.text?.trim() && !deliveredInboxIdsRef.current.has(m.id),
+      );
+      if (fresh.length) await appendStaffMessages(fresh);
+    } catch {
+      /* 静默 */
+    }
+  };
+
+  /** WebSocket 订阅：勿把 wsOpen 放入 deps，否则 open 时会卸载重连导致资源耗尽 */
+  useEffect(() => {
+    if (!inboxPollEnabled) return;
+
+    const onHumanReply = (m: { id: string; text: string; createdAt?: number }) => {
+      void appendStaffMessages([m]);
+    };
+
+    const unsubscribeWs = subscribeRunnerChatHumanReply(onHumanReply);
+    const unsubscribeOpen = subscribeRunnerChatSocketOpen(() => {
+      void drainInboxRef.current();
+    });
+    void drainInboxRef.current();
+
+    return () => {
+      unsubscribeOpen();
+      unsubscribeWs();
+    };
+  }, [inboxPollEnabled, appendStaffMessages]);
+
+  /** 收件箱兜底轮询：与 WS 生命周期分离 */
+  useEffect(() => {
+    if (!inboxPollEnabled) return;
+
+    const pollMs = wsOpen ? INBOX_BACKUP_POLL_MS : INBOX_FAST_POLL_MS;
+    const timer = setInterval(() => void drainInboxRef.current(), pollMs);
+    return () => clearInterval(timer);
+  }, [inboxPollEnabled, wsOpen]);
 
   const appendReply = useCallback(
     async (reply: Omit<ChatMessage, "id" | "role" | "createdAt">) => {

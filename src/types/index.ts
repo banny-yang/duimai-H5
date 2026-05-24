@@ -51,7 +51,7 @@ export interface BibCardData {
 
 export interface ChatMessage {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "staff";
   text?: string;
   cardType?: ChatCardType;
   supply?: SupplyCardData;

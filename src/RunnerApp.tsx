@@ -137,6 +137,7 @@ export default function RunnerApp({ eventGuid }: Props) {
         chatEnabled={chatEnabled}
         chatDisabledHint={chatDisabledHint}
         h5QuickQuestions={h5QuickQuestions}
+        inboxPollEnabled={apiConnected && identityVerified}
       />
 
       <SosFloatingButton
