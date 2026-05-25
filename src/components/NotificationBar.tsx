@@ -29,7 +29,7 @@ export function NotificationBar({ event, onClick }: Props) {
       : event.phase === "pre"
         ? "点击查看领物须知 ›"
         : event.phase === "post"
-          ? "点击查看成绩与接驳 ›"
+          ? "点击查看接驳与赛后服务 ›"
           : "点击查看赛道与补给 ›");
 
   return (

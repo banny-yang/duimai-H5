@@ -6,7 +6,6 @@ import { IdentityVerifySheet } from "@/components/identity/IdentityVerifySheet";
 import { NotificationBar } from "@/components/NotificationBar";
 import { PhaseBadge } from "@/components/PhaseBadge";
 import { PickupGuideSheet } from "@/components/modals/PickupGuideSheet";
-import { ResultSheet } from "@/components/modals/ResultSheet";
 import { RouteMapSheet } from "@/components/modals/RouteMapSheet";
 import { RunnerInfoSheet } from "@/components/modals/RunnerInfoSheet";
 import { ShuttleSheet } from "@/components/modals/ShuttleSheet";
@@ -15,9 +14,9 @@ import { SosFloatingButton } from "@/components/sos/SosFloatingButton";
 import { SosFlowModal } from "@/components/sos/SosFlowModal";
 import { ConnectionErrorPage } from "@/components/ConnectionErrorPage";
 import { useRunnerContext } from "@/hooks/useRunnerContext";
-import type { H5Phase, RunnerProfile, SosPayload } from "@/types";
+import type { H5Phase, SosPayload } from "@/types";
 
-type Sheet = "info" | "map" | "result" | "shuttle" | null;
+type Sheet = "info" | "map" | "shuttle" | null;
 
 interface Props {
   eventGuid: string;
@@ -82,7 +81,6 @@ export default function RunnerApp({ eventGuid }: Props) {
     }
     if (id === "info") setSheet("info");
     if (id === "map") setSheet("map");
-    if (id === "result") setSheet("result");
     if (id === "shuttle") setSheet("shuttle");
   };
 
@@ -95,7 +93,7 @@ export default function RunnerApp({ eventGuid }: Props) {
       return;
     }
     if (noticePhase === "pre") setPickupOpen(true);
-    else if (noticePhase === "post") setSheet("result");
+    else if (noticePhase === "post") setSheet("shuttle");
     else setSheet("map");
   };
 
@@ -105,8 +103,8 @@ export default function RunnerApp({ eventGuid }: Props) {
   };
 
   return (
-    <div className="flex flex-col min-h-[100dvh] relative bg-white">
-      <header className="shrink-0 border-b border-secondary-border bg-white px-3 py-2.5 flex items-center justify-between safe-top">
+    <div className="flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-white">
+      <header className="shrink-0 z-30 border-b border-secondary-border bg-white px-3 py-2.5 flex items-center justify-between safe-top">
         <div className="min-w-0">
           <p className="text-2xs text-secondary font-medium">对麦智能 · 选手助手</p>
           <p className="text-sm font-bold text-ink truncate">{event.name}</p>
@@ -125,10 +123,11 @@ export default function RunnerApp({ eventGuid }: Props) {
         </div>
       </header>
 
-      {!identityVerified && <IdentityVerifyBanner onVerify={openVerify} />}
-
-      <NotificationBar event={event} onClick={handleNoticeClick} />
-      <ShortcutGrid onSelect={handleShortcut} />
+      <div className="shrink-0">
+        {!identityVerified && <IdentityVerifyBanner onVerify={openVerify} />}
+        <NotificationBar event={event} onClick={handleNoticeClick} />
+        <ShortcutGrid onSelect={handleShortcut} />
+      </div>
 
       <ChatPanel
         phase={phase}
@@ -163,6 +162,7 @@ export default function RunnerApp({ eventGuid }: Props) {
 
       <PickupGuideSheet
         open={pickupOpen}
+        eventGuid={eventGuid}
         runner={runner}
         onClose={() => setPickupOpen(false)}
         onViewMap={() => setSheet("map")}
@@ -174,9 +174,18 @@ export default function RunnerApp({ eventGuid }: Props) {
         onClose={() => setSheet(null)}
         onRunnerUpdate={setRunner}
       />
-      <RouteMapSheet open={sheet === "map"} onClose={() => setSheet(null)} />
-      <ResultSheet open={sheet === "result"} onClose={() => setSheet(null)} />
-      <ShuttleSheet open={sheet === "shuttle"} onClose={() => setSheet(null)} />
+      <RouteMapSheet
+        open={sheet === "map"}
+        eventGuid={eventGuid}
+        runnerCategory={runner.category}
+        onClose={() => setSheet(null)}
+      />
+      <ShuttleSheet
+        open={sheet === "shuttle"}
+        eventGuid={eventGuid}
+        phase={phase}
+        onClose={() => setSheet(null)}
+      />
 
       {sosToast && (
         <div
@@ -187,7 +196,7 @@ export default function RunnerApp({ eventGuid }: Props) {
         </div>
       )}
 
-      <p className="shrink-0 text-center text-2xs text-slate-300 py-1 pointer-events-none">
+      <p className="shrink-0 text-center text-2xs text-slate-300 py-0.5 pointer-events-none safe-bottom">
         已对接 · 8091 · {eventGuid.slice(0, 8)}… · ?phase=pre|race|post
       </p>
     </div>

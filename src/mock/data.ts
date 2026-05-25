@@ -19,7 +19,7 @@ export const MOCK_EVENT: EventInfo = {
   preNotice: "距离2026成都马拉松开跑还有 14 小时，请尽快领取参赛包。",
   raceNotice:
     "突发：由于前方赛道突降暴雨，请注意脚下防滑，最近补给点在 1.5 公里后。",
-  postNotice: "赛事已结束，可查询成绩、接驳与赛后服务。",
+  postNotice: "赛事已结束，可查看接驳与赛后服务。",
 };
 
 export const PRE_PROMPTS = [
@@ -100,16 +100,6 @@ export function mockAiReply(input: string): Omit<ChatMessage, "id" | "role"> {
 export const MOCK_STREAM_TEXT =
   "根据当前赛道情况，建议您保持节奏，注意补水。如有不适请立即使用 SOS 求助。";
 
-export const ROUTE_POINTS = [
-  { km: 0, label: "起点" },
-  { km: 5, label: "5K" },
-  { km: 10, label: "10K" },
-  { km: 15, label: "15K 核心补给" },
-  { km: 21, label: "半程" },
-  { km: 30, label: "30K" },
-  { km: 42.195, label: "终点" },
-];
-
 export const MOCK_SHUTTLE = {
   summary: "赛事组委会提供的接驳与物资领取指引（模拟数据）",
   items: [
@@ -129,12 +119,4 @@ export const MOCK_SHUTTLE = {
       time: "赛前 05:30–06:30",
     },
   ],
-};
-
-export const MOCK_RESULT = {
-  finishTime: "03:42:18",
-  netTime: "03:41:55",
-  rankOverall: 1284,
-  rankGender: 312,
-  status: "已完赛",
 };

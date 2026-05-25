@@ -16,6 +16,8 @@ export interface RunnerProfile {
   checkInBefore: string;
   /** 后端会话问候语（优先展示） */
   greeting?: string;
+  /** 组别 full / half / mini，用于赛道地图选线 */
+  category?: string;
 }
 
 export interface EventInfo {

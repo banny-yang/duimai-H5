@@ -11,7 +11,6 @@ export const RACE_PROMPTS = [
 ];
 
 export const POST_PROMPTS = [
-  "在哪里查询成绩？",
   "完赛包在哪里领取？",
   "赛后接驳车在哪里乘坐？",
 ];

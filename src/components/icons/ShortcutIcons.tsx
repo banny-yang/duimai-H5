@@ -10,7 +10,7 @@ const strokeProps = {
   strokeLinejoin: "round" as const,
 };
 
-export function IconTicket({ className = "w-7 h-7" }: { className?: string }) {
+export function IconTicket({ className = "w-6 h-6" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden>
       <path
@@ -21,7 +21,7 @@ export function IconTicket({ className = "w-7 h-7" }: { className?: string }) {
   );
 }
 
-export function IconMap({ className = "w-7 h-7" }: { className?: string }) {
+export function IconMap({ className = "w-6 h-6" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden>
       <path {...strokeProps} d="M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3-6-3z" />
@@ -30,16 +30,7 @@ export function IconMap({ className = "w-7 h-7" }: { className?: string }) {
   );
 }
 
-export function IconTimer({ className = "w-7 h-7" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden>
-      <circle {...strokeProps} cx="12" cy="13" r="8" />
-      <path {...strokeProps} d="M12 9v4l2.5 2M9 3h6" />
-    </svg>
-  );
-}
-
-export function IconBus({ className = "w-7 h-7" }: { className?: string }) {
+export function IconBus({ className = "w-6 h-6" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden>
       <path {...strokeProps} d="M6 6h12a2 2 0 0 1 2 2v8H4V8a2 2 0 0 1 2-2zm-2 10h16v2H4v-2z" />
@@ -53,6 +44,5 @@ export function IconBus({ className = "w-7 h-7" }: { className?: string }) {
 export const SHORTCUT_ICON_MAP = {
   info: IconTicket,
   map: IconMap,
-  result: IconTimer,
   shuttle: IconBus,
 } as const;

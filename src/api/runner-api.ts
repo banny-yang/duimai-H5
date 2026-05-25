@@ -6,6 +6,13 @@ import {
 } from "@/lib/runner-identity";
 import { resolveH5Phase } from "@/lib/event-phase";
 import type { EventInfo, H5Phase, RunnerProfile } from "@/types";
+import {
+  migrateToBundle,
+  resolveLineForCategory,
+  type EventRouteLine,
+  type EventRouteMapBundle,
+} from "@/types/route-map";
+import type { EventShuttleConfig } from "@/types/shuttle";
 
 const EVENT_GUID_KEY = "duimai_event_guid";
 
@@ -63,6 +70,7 @@ export interface SessionEnterVO {
   phase: string;
   greeting: string;
   checkInBefore: string;
+  category?: string;
 }
 
 export interface H5QuickQuestions {
@@ -154,6 +162,7 @@ export function mapSessionToRunner(s: SessionEnterVO): RunnerProfile {
     emergencyPhone: "—",
     checkInBefore: s.checkInBefore ?? "07:15",
     greeting: s.greeting,
+    category: s.category,
   };
 }
 
@@ -165,7 +174,7 @@ export function mapPublicToEvent(pub: PublicEventVO, notice?: NoticeVO): EventIn
   }) as H5Phase;
   const fallbackPre = `距离${pub.eventName}开跑在即，请尽快领取参赛包。`;
   const fallbackRace = "赛中播报：请注意补给与路况，如需帮助请长按 SOS。";
-  const fallbackPost = "赛事已结束，可查询成绩、接驳与赛后服务。";
+  const fallbackPost = "赛事已结束，可查看接驳与赛后服务。";
   const noticePhase = notice?.phase;
   const noticeText = notice?.text;
   const isEmergency = notice?.emergency === true && !!noticeText?.trim();
@@ -224,6 +233,7 @@ export function mergeProfile(base: RunnerProfile, p: ProfileVO): RunnerProfile {
     ...base,
     name: p.name ?? base.name,
     bib: p.bibNumber ?? base.bib,
+    category: p.category ?? base.category,
     zone: p.zone ?? base.zone,
     bloodType: p.bloodType ? `${p.bloodType}`.replace(/型型$/, "型") : base.bloodType,
     pickupWindow: p.pickupWindow ?? p.pickupHint ?? base.pickupWindow,
@@ -273,6 +283,55 @@ export async function fetchSelectableEvents() {
 
 export async function fetchPublicEvent(eventGuid: string) {
   return apiGet<PublicEventVO>("/runner/event/public", { eventGuid }, false);
+}
+
+export interface AmapClientConfigVO {
+  enabled: boolean;
+  apiKey?: string;
+  securityJsCode?: string;
+}
+
+export async function fetchAmapClientConfig() {
+  return apiGet<AmapClientConfigVO>("/runner/map/amap-client", undefined, false);
+}
+
+/** 交通接驳与领物配置 */
+export async function fetchEventShuttleConfig(eventGuid: string) {
+  return apiGet<EventShuttleConfig>("/runner/shuttle", { eventGuid }, false);
+}
+
+export async function fetchEventRouteMapBundle(eventGuid: string) {
+  const raw = await apiGet<EventRouteMapBundle | EventRouteLine>(
+    "/runner/map/routes",
+    { eventGuid },
+    false,
+  );
+  return migrateToBundle(raw);
+}
+
+export async function fetchEventRouteLine(
+  eventGuid: string,
+  opts?: { routeId?: string; category?: string },
+) {
+  const params: Record<string, string> = { eventGuid };
+  if (opts?.routeId) params.routeId = opts.routeId;
+  if (opts?.category) params.category = opts.category;
+  return apiGet<EventRouteLine>("/runner/map/route", params, false);
+}
+
+/** 解析当前应展示的线路（组别优先） */
+export async function resolveRunnerRouteLine(
+  eventGuid: string,
+  category?: string | null,
+  routeId?: string,
+) {
+  if (routeId) {
+    return fetchEventRouteLine(eventGuid, { routeId });
+  }
+  const bundle = await fetchEventRouteMapBundle(eventGuid);
+  const line = resolveLineForCategory(bundle, category);
+  if (line) return line;
+  return fetchEventRouteLine(eventGuid, { category: category ?? undefined });
 }
 
 /** 选手端 H5 常用问题（赛前/赛中/赛后），来自 duimai-frontend-service */

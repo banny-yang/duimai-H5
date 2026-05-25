@@ -241,7 +241,7 @@ export function ChatPanel({
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-[200px]">
+      <div className="flex-1 overflow-y-auto overscroll-y-contain min-h-0">
         <ChatSessionTime at={sessionAt} />
         <div className="space-y-3 py-2">
           {messages.map((m) => (
