@@ -68,6 +68,29 @@ export async function apiGet<T>(
   return body.data;
 }
 
+export async function apiPostForm<T>(
+  path: string,
+  form: FormData,
+  auth = true,
+): Promise<T> {
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (auth) {
+    const token = getRunnerToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers,
+    body: form,
+  });
+  const body = await parseJson<T>(res);
+  if (!res.ok || body.code !== 200) {
+    throw new ApiError(body.message || res.statusText, res.status, body.code);
+  }
+  return body.data;
+}
+
 export async function apiPost<T>(
   path: string,
   payload: unknown,

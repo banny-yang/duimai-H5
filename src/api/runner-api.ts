@@ -1,4 +1,4 @@
-import { apiGet, apiPost, setRunnerToken } from "@/lib/api-client";
+import { apiGet, apiPost, apiPostForm, setRunnerToken } from "@/lib/api-client";
 import {
   clearStoredIdentity,
   saveStoredIdentity,
@@ -392,6 +392,28 @@ export async function fetchProfile() {
 
 export async function sendChat(req: ChatRequest) {
   return apiPost<ChatResponseVO>("/runner/chat", req);
+}
+
+export interface SpeechToTextResult {
+  text: string;
+  durationMs?: number;
+}
+
+function extensionForBlob(blob: Blob): string {
+  const t = blob.type || "";
+  if (t.includes("mp4")) return "m4a";
+  if (t.includes("mpeg")) return "mp3";
+  if (t.includes("wav")) return "wav";
+  if (t.includes("ogg")) return "ogg";
+  return "webm";
+}
+
+/** H5 按住说话：上传录音并转文字（确认后再 sendChat） */
+export async function transcribeSpeech(audio: Blob) {
+  const form = new FormData();
+  const ext = extensionForBlob(audio);
+  form.append("audio", audio, `recording.${ext}`);
+  return apiPostForm<SpeechToTextResult>("/runner/chat/speech-to-text", form);
 }
 
 /** 拉取危机中心人工回复（服务端 drain，每条仅送达一次） */
