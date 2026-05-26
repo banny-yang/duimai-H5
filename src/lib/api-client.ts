@@ -76,7 +76,10 @@ export async function apiPostForm<T>(
   const headers: Record<string, string> = { Accept: "application/json" };
   if (auth) {
     const token = getRunnerToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
+    if (!token) {
+      throw new ApiError("请先绑定参赛号登录后再使用语音输入", 401);
+    }
+    headers.Authorization = `Bearer ${token}`;
   }
 
   const res = await fetch(`${API_BASE}${path}`, {

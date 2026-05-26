@@ -1,47 +1,62 @@
 # H5 语音输入
 
-## 流程
+## 流程（微信式）
 
-按住麦克风 → 录音 → `POST /api/runner/chat/speech-to-text` → 预览编辑 → `POST /api/runner/chat`。
+1. 点击输入栏左侧 **麦克风** → 输入区切换为 **「按住 说话」** 条（⌨️ 可切回键盘）。
+2. 松开后：聊天列表立即出现 **语音气泡**（可点击播放）。
+3. 后台 `POST /api/runner/chat/speech-to-text` 转写完成后，**自动** `POST /api/runner/chat` 发送文字给 AI（`inputSource: voice`、`voiceDurationMs`），运营端对话记录会标记为 **语音转写**。
 
-## 配置方式（推荐：运营平台）
+后端由 **8091 选手服务** 转发至 Dify：
 
-1. 登录 **平台运营后台** → 侧栏 **生态 → 语音输入**（`/admin/runner-stt-config`）
-2. 填写阿里云 NLS **AppKey**、**AccessKey**，选择引擎，保存
-3. 配置写入 `platform_config`（`runner_stt`）并缓存 Redis，**8091 选手服务即时生效**，无需重启
+- `POST {Dify API 根地址}/audio-to-text`
+- `Authorization: Bearer app-xxxxxxxx`（运营平台「Dify 配置」中的应用 API Key）
+- `multipart/form-data` 字段 `file`（mp3 / wav / m4a / webm 等）
 
-## 环境变量兜底（可选）
+## 配置
 
-未在平台入库时，可使用 `application.yml` / 环境变量：
+### 1. Dify 控制台（必做）
 
-| 变量 | 说明 |
+| 步骤 | 操作 |
 |------|------|
-| `ALIYUN_NLS_APP_KEY` | NLS 项目 AppKey |
-| `ALIYUN_ACCESS_KEY_ID` | RAM AccessKey ID |
-| `ALIYUN_ACCESS_KEY_SECRET` | RAM AccessKey Secret |
-| `RUNNER_STT_PROVIDER` | `aliyun-nls` 或 `dashscope` |
-| `DASHSCOPE_API_KEY` | webm 兜底 |
-| `RUNNER_STT_MOCK` | 本地模拟（不调云） |
+| STT 模型 | **设置 → 模型供应商**：配置语音识别（Speech2Text / STT）并设默认 |
+| 应用功能 | 打开用于 H5 的 **聊天助手/Agent** → **功能（Function）** → 开启 **Speech to Text** |
+| 发布 | **发布应用**（仅保存草稿不生效） |
+| API Key | 复制该已发布应用的 **API Key**（`app-` 开头） |
 
-示例见 `java-project/scripts/stt.local.env.example`。
+若接口返回 `Speech to text is not enabled`：**对话用的 Agent Key 通常未开 STT**。请单独建一个只开 STT 的应用，将其 Key 填到对麦「语音转写应用 API Key」。
 
-```bash
-cd java-project
-cp scripts/stt.local.env.example scripts/stt.local.env
-# 编辑 stt.local.env 填入 AppKey 与 AccessKey
-set -a && source scripts/stt.local.env && set +a
-# 再启动 8091
+### 2. 对麦运营平台
+
+1. **Dify 配置**（`/admin/dify-config`）：API 地址 + **语音转写应用 API Key**（推荐）；Agent Key 仅用于对话。
+2. **语音输入**（`/admin/runner-stt-config`）：开启 H5 语音输入。
+
+配置写入 `platform_config`，8090 / 8091 共用同一 MySQL。
+
+**自检**：
+
+```http
+GET http://localhost:8091/api/runner/chat/speech-to-text/status
 ```
 
-也可写入 `duimai-frontend-service` 启动脚本或 IDE 环境变量。
+期望 `difyReady: true`，`difyAppKeyPrefix` 为 `app-xxxx***`。
 
 ## 本地联调
 
-1. 启动 8091 + `cd duimai-H5 && npm run dev`
-2. 配置上述环境变量或 `RUNNER_STT_MOCK=true`
-3. **localhost / HTTPS** 打开 H5，绑定参赛号后按住 🎤 测试
+1. 启动 8090、8091，`cd duimai-h5 && npm run dev`
+2. 运营平台保存 Dify 配置并开启语音输入
+3. 或设置 `RUNNER_STT_MOCK=true`（8091）返回模拟文字，不调 Dify
 
-## 格式说明
+## 录音格式
 
-- iOS 多为 `m4a/aac`，走 NLS 效果最佳
-- Android Chrome 多为 `webm`：已配置 `DASHSCOPE_API_KEY` 时自动兜底；否则依赖 NLS 对 opus 的兼容性
+- **iOS / Safari**：多为 m4a，可直接上传 Dify。
+- **电脑 Chrome / 安卓**：多为 webm；H5 会在上传前 **自动转成 16kHz WAV**，无需手动处理。
+
+## 自建 Dify 路径
+
+官方路径为 `audio-to-text`。若实例为 `audio/to-text`，在 8091 配置：
+
+```yaml
+duimai:
+  stt:
+    dify-audio-endpoint: audio/to-text
+```

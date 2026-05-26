@@ -5,24 +5,31 @@ interface Props {
   elapsedMs: number;
   maxMs: number;
   cancelHint?: boolean;
+  onCancel?: () => void;
 }
 
-export function VoiceRecordOverlay({ visible, elapsedMs, maxMs, cancelHint }: Props) {
+export function VoiceRecordOverlay({
+  visible,
+  elapsedMs,
+  maxMs,
+  cancelHint,
+  onCancel,
+}: Props) {
   if (!visible) return null;
 
   const sec = Math.floor(elapsedMs / 1000);
   const maxSec = Math.floor(maxMs / 1000);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center pb-28 pointer-events-none">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-end pb-24 px-4 pointer-events-none">
       <div
         className={cn(
-          "mx-4 px-6 py-4 rounded-2xl shadow-lg text-center min-w-[200px]",
+          "pointer-events-auto px-6 py-4 rounded-2xl shadow-lg text-center min-w-[220px] max-w-sm",
           cancelHint ? "bg-destructive/90 text-white" : "bg-ink/85 text-white",
         )}
       >
         <p className="text-sm font-bold">
-          {cancelHint ? "松开取消" : "松开发送 · 上滑取消"}
+          {cancelHint ? "松开手指即可取消" : "松开发送 · 上滑取消"}
         </p>
         <p className="text-xs mt-1 opacity-90">
           {sec}s / {maxSec}s
@@ -42,6 +49,19 @@ export function VoiceRecordOverlay({ visible, elapsedMs, maxMs, cancelHint }: Pr
           </div>
         )}
       </div>
+      {onCancel && (
+        <button
+          type="button"
+          className="pointer-events-auto mt-4 px-8 py-2.5 rounded-full bg-white text-ink text-sm font-bold shadow-md border border-slate-200 active:scale-95"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onCancel();
+          }}
+        >
+          取消录音
+        </button>
+      )}
     </div>
   );
 }

@@ -4,11 +4,13 @@ export type VoiceRecorderPhase = "idle" | "recording" | "denied" | "unsupported"
 
 const MAX_MS = 60_000;
 const MIN_MS = 500;
+const STOP_TIMEOUT_MS = 2_000;
 
 function pickMimeType(): string | undefined {
   if (typeof MediaRecorder === "undefined") return undefined;
   const candidates = [
     "audio/mp4",
+    "audio/aac",
     "audio/webm;codecs=opus",
     "audio/webm",
     "audio/ogg;codecs=opus",
@@ -37,7 +39,12 @@ export function useVoiceRecorder() {
     setElapsedMs(0);
   }, []);
 
-  useEffect(() => () => cleanupStream(), [cleanupStream]);
+  const forceIdle = useCallback(() => {
+    cleanupStream();
+    setPhase("idle");
+  }, [cleanupStream]);
+
+  useEffect(() => () => forceIdle(), [forceIdle]);
 
   const start = useCallback(async () => {
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
@@ -48,6 +55,8 @@ export function useVoiceRecorder() {
       setPhase("unsupported");
       return false;
     }
+
+    forceIdle();
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -61,87 +70,105 @@ export function useVoiceRecorder() {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
+      recorder.onerror = () => {
+        forceIdle();
+      };
+
       recorder.start(200);
       startedAtRef.current = Date.now();
       setElapsedMs(0);
       setPhase("recording");
       timerRef.current = setInterval(() => {
+        const r = recorderRef.current;
+        if (!r) return;
         const ms = Date.now() - startedAtRef.current;
         setElapsedMs(ms);
-        if (ms >= MAX_MS && recorder.state === "recording") {
+        if (ms >= MAX_MS && r.state === "recording") {
           try {
-            recorder.stop();
+            if (typeof r.requestData === "function") r.requestData();
+            r.stop();
           } catch {
-            /* ignore */
+            forceIdle();
           }
         }
       }, 100);
       return true;
     } catch {
-      cleanupStream();
+      forceIdle();
       setPhase("denied");
       return false;
     }
-  }, [cleanupStream]);
+  }, [forceIdle]);
 
-  const finalizeBlob = useCallback(
-    (recorder: MediaRecorder, duration: number): Blob | null => {
-      const mime = recorder.mimeType || chunksRef.current[0]?.type || "audio/webm";
-      const blob = new Blob(chunksRef.current, { type: mime });
-      cleanupStream();
-      setPhase("idle");
-      if (duration < MIN_MS || blob.size < 100) {
-        return null;
+  const buildBlob = useCallback((recorder: MediaRecorder, duration: number): Blob | null => {
+    const mime = recorder.mimeType || chunksRef.current[0]?.type || "audio/webm";
+    const blob = new Blob(chunksRef.current, { type: mime });
+    if (duration < MIN_MS || blob.size < 100) {
+      return null;
+    }
+    return blob;
+  }, []);
+
+  const stopRecorder = useCallback((recorder: MediaRecorder) => {
+    try {
+      if (recorder.state === "recording" && typeof recorder.requestData === "function") {
+        recorder.requestData();
       }
-      return blob;
-    },
-    [cleanupStream],
-  );
+      if (recorder.state !== "inactive") {
+        recorder.stop();
+      }
+    } catch {
+      /* force cleanup below */
+    }
+  }, []);
 
   const stop = useCallback((): Promise<Blob | null> => {
     return new Promise((resolve) => {
       const recorder = recorderRef.current;
       if (!recorder) {
-        cleanupStream();
-        setPhase("idle");
+        forceIdle();
         resolve(null);
         return;
       }
 
       const duration = Date.now() - startedAtRef.current;
+      let settled = false;
+
+      const finish = (blob: Blob | null) => {
+        if (settled) return;
+        settled = true;
+        forceIdle();
+        resolve(blob);
+      };
+
+      const timeoutId = window.setTimeout(() => {
+        const blob = buildBlob(recorder, duration);
+        finish(blob);
+      }, STOP_TIMEOUT_MS);
 
       if (recorder.state === "inactive") {
-        resolve(finalizeBlob(recorder, duration));
+        window.clearTimeout(timeoutId);
+        finish(buildBlob(recorder, duration));
         return;
       }
 
       recorder.onstop = () => {
-        resolve(finalizeBlob(recorder, duration));
+        window.clearTimeout(timeoutId);
+        finish(buildBlob(recorder, duration));
       };
 
-      try {
-        recorder.stop();
-      } catch {
-        cleanupStream();
-        setPhase("idle");
-        resolve(null);
-      }
+      stopRecorder(recorder);
     });
-  }, [cleanupStream, finalizeBlob]);
+  }, [buildBlob, forceIdle, stopRecorder]);
 
   const cancel = useCallback(() => {
     const recorder = recorderRef.current;
-    if (recorder && recorder.state !== "inactive") {
+    if (recorder) {
       recorder.onstop = null;
-      try {
-        recorder.stop();
-      } catch {
-        /* ignore */
-      }
+      stopRecorder(recorder);
     }
-    cleanupStream();
-    setPhase("idle");
-  }, [cleanupStream]);
+    forceIdle();
+  }, [forceIdle, stopRecorder]);
 
   return {
     phase,

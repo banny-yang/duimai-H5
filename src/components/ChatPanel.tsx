@@ -4,7 +4,8 @@ import { ChatInput } from "@/components/ChatInput";
 import { ChatMessageItem } from "@/components/ChatMessageItem";
 import { ChatSessionTime } from "@/components/ChatSessionTime";
 import { SuggestedPrompts } from "@/components/SuggestedPrompts";
-import { fetchChatInbox, sendChat } from "@/api/runner-api";
+import { fetchChatInbox, sendChat, transcribeSpeech } from "@/api/runner-api";
+import type { VoiceMessagePayload } from "@/components/ChatInput";
 import { ApiError } from "@/lib/api-client";
 import { useRunnerChatSocketState } from "@/hooks/useRunnerChatSocketState";
 import { subscribeRunnerChatHumanReply, subscribeRunnerChatSocketOpen } from "@/lib/runner-chat-ws";
@@ -76,6 +77,7 @@ export function ChatPanel({
   const [chatError, setChatError] = useState<string | null>(null);
   const conversationIdRef = useRef<string | undefined>();
   const deliveredInboxIdsRef = useRef<Set<string>>(new Set());
+  const audioObjectUrlsRef = useRef<Set<string>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
   const wsState = useRunnerChatSocketState();
   const wsOpen = wsState === "open";
@@ -187,8 +189,8 @@ export function ChatPanel({
     [touchSession],
   );
 
-  const sendMessage = useCallback(
-    async (text: string) => {
+  const sendQueryToAi = useCallback(
+    async (text: string, voiceMeta?: { durationMs: number }) => {
       if (thinking) return;
 
       if (!chatEnabled) {
@@ -196,9 +198,6 @@ export function ChatPanel({
         return;
       }
 
-      const ts = now();
-      setMessages((prev) => [...prev, { id: uid(), role: "user", text, createdAt: ts }]);
-      touchSession();
       setThinking(true);
       setChatError(null);
 
@@ -206,6 +205,9 @@ export function ChatPanel({
         const res = await sendChat({
           query: text,
           conversationId: conversationIdRef.current,
+          ...(voiceMeta
+            ? { inputSource: "voice" as const, voiceDurationMs: voiceMeta.durationMs }
+            : {}),
         });
         if (res.conversationId) conversationIdRef.current = res.conversationId;
 
@@ -223,8 +225,83 @@ export function ChatPanel({
         setThinking(false);
       }
     },
-    [thinking, touchSession, chatEnabled, chatDisabledHint, appendReply],
+    [thinking, chatEnabled, chatDisabledHint, appendReply],
   );
+
+  const sendTextMessage = useCallback(
+    async (text: string) => {
+      if (thinking) return;
+      const ts = now();
+      setMessages((prev) => [...prev, { id: uid(), role: "user", text, createdAt: ts }]);
+      touchSession();
+      await sendQueryToAi(text);
+    },
+    [thinking, touchSession, sendQueryToAi],
+  );
+
+  const handleVoiceMessage = useCallback(
+    async ({ blob, durationMs }: VoiceMessagePayload) => {
+      if (thinking) return;
+
+      const msgId = uid();
+      const audioUrl = URL.createObjectURL(blob);
+      audioObjectUrlsRef.current.add(audioUrl);
+      const ts = now();
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: msgId,
+          role: "user",
+          audioUrl,
+          audioDurationMs: durationMs,
+          voiceStatus: "transcribing",
+          createdAt: ts,
+        },
+      ]);
+      touchSession();
+
+      if (!chatEnabled) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === msgId ? { ...m, voiceStatus: "failed" } : m)),
+        );
+        setChatError(chatDisabledHint ?? "AI 对话不可用");
+        return;
+      }
+
+      try {
+        const res = await transcribeSpeech(blob);
+        const text = res.text?.trim();
+        if (!text) {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === msgId ? { ...m, voiceStatus: "failed" } : m)),
+          );
+          setChatError("未识别到有效语音，请重试");
+          return;
+        }
+
+        setMessages((prev) =>
+          prev.map((m) => (m.id === msgId ? { ...m, voiceStatus: "done" } : m)),
+        );
+        await sendQueryToAi(text, { durationMs });
+      } catch (e) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === msgId ? { ...m, voiceStatus: "failed" } : m)),
+        );
+        const msg = e instanceof ApiError ? e.message : "语音识别失败";
+        setChatError(msg);
+      }
+    },
+    [thinking, touchSession, chatEnabled, chatDisabledHint, sendQueryToAi],
+  );
+
+  useEffect(() => {
+    const urls = audioObjectUrlsRef.current;
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+      urls.clear();
+    };
+  }, []);
 
   const statusLabel = chatEnabled
     ? "已连接 AI"
@@ -274,10 +351,14 @@ export function ChatPanel({
       <div className="shrink-0 bg-white border-t border-secondary-border">
         <SuggestedPrompts
           prompts={prompts}
-          onSelect={sendMessage}
+          onSelect={sendTextMessage}
           disabled={thinking || !chatEnabled}
         />
-        <ChatInput onSend={sendMessage} disabled={thinking || !chatEnabled} />
+        <ChatInput
+          onSendText={sendTextMessage}
+          onVoiceMessage={handleVoiceMessage}
+          disabled={thinking || !chatEnabled}
+        />
       </div>
     </section>
   );

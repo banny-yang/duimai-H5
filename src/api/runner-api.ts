@@ -1,4 +1,5 @@
 import { apiGet, apiPost, apiPostForm, setRunnerToken } from "@/lib/api-client";
+import { prepareAudioForStt } from "@/lib/voice-audio-prepare";
 import {
   clearStoredIdentity,
   saveStoredIdentity,
@@ -119,6 +120,9 @@ export interface ProfileVO {
 export interface ChatRequest {
   query: string;
   conversationId?: string;
+  /** 文字输入默认 text；语音转写后传 voice */
+  inputSource?: "text" | "voice";
+  voiceDurationMs?: number;
 }
 
 export interface ChatResponseVO {
@@ -399,20 +403,11 @@ export interface SpeechToTextResult {
   durationMs?: number;
 }
 
-function extensionForBlob(blob: Blob): string {
-  const t = blob.type || "";
-  if (t.includes("mp4")) return "m4a";
-  if (t.includes("mpeg")) return "mp3";
-  if (t.includes("wav")) return "wav";
-  if (t.includes("ogg")) return "ogg";
-  return "webm";
-}
-
 /** H5 按住说话：上传录音并转文字（确认后再 sendChat） */
 export async function transcribeSpeech(audio: Blob) {
+  const prepared = await prepareAudioForStt(audio);
   const form = new FormData();
-  const ext = extensionForBlob(audio);
-  form.append("audio", audio, `recording.${ext}`);
+  form.append("audio", prepared.blob, prepared.filename);
   return apiPostForm<SpeechToTextResult>("/runner/chat/speech-to-text", form);
 }
 

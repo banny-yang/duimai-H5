@@ -2,6 +2,7 @@ import { BibPickupCard } from "@/components/cards/BibPickupCard";
 import { SupplyStationCard } from "@/components/cards/SupplyStationCard";
 import { AiAvatar } from "@/components/AiAvatar";
 import { GreetingMessage } from "@/components/GreetingMessage";
+import { VoiceMessageBubble } from "@/components/VoiceMessageBubble";
 import { useTypewriter } from "@/hooks/useTypewriter";
 import { FormattedChatText } from "@/lib/format-chat-markdown";
 import type { ChatMessage, RunnerProfile } from "@/types";
@@ -22,13 +23,28 @@ export function ChatMessageItem({ message, runner, greeting }: Props) {
   }
 
   if (isUser) {
-    return (
-      <div className="flex justify-end px-3 pr-14">
-        <div className="user-bubble max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[15px] text-white font-medium">
-          {message.text}
+    if (message.audioUrl) {
+      return (
+        <div className="flex justify-end px-3 pr-14">
+          <VoiceMessageBubble
+            audioUrl={message.audioUrl}
+            durationMs={message.audioDurationMs ?? 0}
+            transcribing={message.voiceStatus === "transcribing"}
+            failed={message.voiceStatus === "failed"}
+          />
         </div>
-      </div>
-    );
+      );
+    }
+    if (message.text) {
+      return (
+        <div className="flex justify-end px-3 pr-14">
+          <div className="user-bubble max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[15px] text-white font-medium">
+            {message.text}
+          </div>
+        </div>
+      );
+    }
+    return null;
   }
 
   return (

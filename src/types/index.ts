@@ -51,10 +51,17 @@ export interface BibCardData {
   barcode: string;
 }
 
+/** 用户语音消息转写状态 */
+export type VoiceMessageStatus = "transcribing" | "done" | "failed";
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "staff";
   text?: string;
+  /** 本地语音播放地址（object URL） */
+  audioUrl?: string;
+  audioDurationMs?: number;
+  voiceStatus?: VoiceMessageStatus;
   cardType?: ChatCardType;
   supply?: SupplyCardData;
   bib?: BibCardData;
