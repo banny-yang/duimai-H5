@@ -3,6 +3,7 @@ import { SupplyStationCard } from "@/components/cards/SupplyStationCard";
 import { AiAvatar } from "@/components/AiAvatar";
 import { GreetingMessage } from "@/components/GreetingMessage";
 import { VoiceMessageBubble } from "@/components/VoiceMessageBubble";
+import { isVoiceTranscribedMessage, VoiceTranscribeTag } from "@/components/VoiceTranscribeTag";
 import { useTypewriter } from "@/hooks/useTypewriter";
 import { FormattedChatText } from "@/lib/format-chat-markdown";
 import type { ChatMessage, RunnerProfile } from "@/types";
@@ -23,15 +24,39 @@ export function ChatMessageItem({ message, runner, greeting }: Props) {
   }
 
   if (isUser) {
-    if (message.audioUrl) {
+    const voiceTranscribed = isVoiceTranscribedMessage(message);
+    const showVoiceBubble =
+      !!message.audioUrl ||
+      (voiceTranscribed && (message.audioDurationMs ?? 0) > 0) ||
+      message.voiceStatus === "transcribing" ||
+      message.voiceStatus === "failed";
+    const showTranscribedText =
+      !!message.text?.trim() && voiceTranscribed && message.voiceStatus !== "transcribing";
+
+    if (showVoiceBubble || showTranscribedText) {
       return (
         <div className="flex justify-end px-3 pr-14">
-          <VoiceMessageBubble
-            audioUrl={message.audioUrl}
-            durationMs={message.audioDurationMs ?? 0}
-            transcribing={message.voiceStatus === "transcribing"}
-            failed={message.voiceStatus === "failed"}
-          />
+          <div className="flex flex-col items-end gap-1.5 max-w-[85%]">
+            {showVoiceBubble && (
+              <VoiceMessageBubble
+                audioUrl={message.audioUrl}
+                durationMs={message.audioDurationMs ?? 0}
+                transcribing={message.voiceStatus === "transcribing"}
+                failed={message.voiceStatus === "failed"}
+                playbackDisabled={message.voicePlaybackDisabled}
+              />
+            )}
+            {showTranscribedText && (
+              <div className="user-bubble rounded-2xl rounded-br-md px-3.5 py-2.5 text-[15px] text-white font-medium">
+                <VoiceTranscribeTag
+                  inverted
+                  durationMs={message.audioDurationMs}
+                  className="mb-1.5 block"
+                />
+                <p className="leading-relaxed break-words">{message.text}</p>
+              </div>
+            )}
+          </div>
         </div>
       );
     }

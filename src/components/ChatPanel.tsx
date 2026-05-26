@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ChatInput } from "@/components/ChatInput";
+import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
 import { ChatMessageItem } from "@/components/ChatMessageItem";
 import { ChatSessionTime } from "@/components/ChatSessionTime";
 import { SuggestedPrompts } from "@/components/SuggestedPrompts";
-import { fetchChatInbox, sendChat, transcribeSpeech } from "@/api/runner-api";
+import { fetchChatHistory, fetchChatInbox, sendChat, transcribeSpeech } from "@/api/runner-api";
+import { mapHistoryToChatMessages } from "@/lib/chat-history";
 import type { VoiceMessagePayload } from "@/components/ChatInput";
 import { ApiError } from "@/lib/api-client";
+import { clampVoiceDurationMs } from "@/lib/voice-message";
 import { useRunnerChatSocketState } from "@/hooks/useRunnerChatSocketState";
 import { subscribeRunnerChatHumanReply, subscribeRunnerChatSocketOpen } from "@/lib/runner-chat-ws";
 import { resolveQuickPrompts } from "@/lib/h5-quick-questions";
@@ -23,6 +26,8 @@ interface Props {
   h5QuickQuestions?: H5QuickQuestions | null;
   /** 已绑定身份时可轮询人工回复 */
   inboxPollEnabled?: boolean;
+  /** 已绑定身份时加载服务端聊天记录 */
+  historyEnabled?: boolean;
 }
 
 /** WebSocket 未连通时快速拉取 Redis 收件箱 */
@@ -68,6 +73,7 @@ export function ChatPanel({
   chatDisabledHint,
   h5QuickQuestions,
   inboxPollEnabled = false,
+  historyEnabled = false,
 }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { id: "greet", role: "assistant", text: "", createdAt: initialSessionTime().getTime() },
@@ -79,6 +85,9 @@ export function ChatPanel({
   const deliveredInboxIdsRef = useRef<Set<string>>(new Set());
   const audioObjectUrlsRef = useRef<Set<string>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const nearBottomRef = useRef(true);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const wsState = useRunnerChatSocketState();
   const wsOpen = wsState === "open";
   const prompts = resolveQuickPrompts(phase, h5QuickQuestions);
@@ -87,12 +96,28 @@ export function ChatPanel({
     setSessionAt(new Date());
   }, []);
 
-  const scrollBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  const isNearBottom = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 72;
   }, []);
 
+  const scrollBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    bottomRef.current?.scrollIntoView({ behavior });
+    nearBottomRef.current = true;
+    setShowScrollToBottom(false);
+  }, []);
+
+  const onMessagesScroll = useCallback(() => {
+    const near = isNearBottom();
+    nearBottomRef.current = near;
+    setShowScrollToBottom(!near);
+  }, [isNearBottom]);
+
   useEffect(() => {
-    scrollBottom();
+    if (nearBottomRef.current) {
+      scrollBottom(messages.length <= 2 ? "auto" : "smooth");
+    }
   }, [messages, thinking, scrollBottom]);
 
   const appendStaffMessages = useCallback(
@@ -131,6 +156,56 @@ export function ChatPanel({
       /* 静默 */
     }
   };
+
+  useEffect(() => {
+    if (!historyEnabled || !runner.id || runner.id === "visitor") return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetchChatHistory();
+        if (cancelled) return;
+        if (res.conversationId) conversationIdRef.current = res.conversationId;
+
+        const loaded = mapHistoryToChatMessages(res.messages ?? []);
+        if (loaded.length === 0) return;
+
+        for (const m of loaded) {
+          if (m.id.startsWith("hist-")) {
+            deliveredInboxIdsRef.current.add(m.id);
+          }
+        }
+
+        setMessages((prev) => {
+          const greet = prev.find((m) => m.id === "greet");
+          const byId = new Map<string, ChatMessage>();
+          for (const m of prev) {
+            if (m.id === "greet") continue;
+            byId.set(m.id, m);
+          }
+          for (const m of loaded) {
+            byId.set(m.id, m);
+          }
+          const merged = [...byId.values()].sort(
+            (a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0),
+          );
+          return greet ? [greet, ...merged] : merged;
+        });
+
+        const firstTs = loaded.find((m) => m.createdAt)?.createdAt;
+        if (firstTs) setSessionAt(new Date(firstTs));
+        requestAnimationFrame(() => scrollBottom("auto"));
+      } catch (e) {
+        if (!cancelled) {
+          console.warn("[ChatPanel] 加载聊天记录失败", e);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [historyEnabled, runner.id]);
 
   /** WebSocket 订阅：勿把 wsOpen 放入 deps，否则 open 时会卸载重连导致资源耗尽 */
   useEffect(() => {
@@ -240,9 +315,11 @@ export function ChatPanel({
   );
 
   const handleVoiceMessage = useCallback(
-    async ({ blob, durationMs }: VoiceMessagePayload) => {
+    async ({ blob, durationMs: rawDurationMs }: VoiceMessagePayload) => {
       if (thinking) return;
 
+      const durationMs = clampVoiceDurationMs(rawDurationMs);
+      nearBottomRef.current = true;
       const msgId = uid();
       const audioUrl = URL.createObjectURL(blob);
       audioObjectUrlsRef.current.add(audioUrl);
@@ -281,7 +358,16 @@ export function ChatPanel({
         }
 
         setMessages((prev) =>
-          prev.map((m) => (m.id === msgId ? { ...m, voiceStatus: "done" } : m)),
+          prev.map((m) =>
+            m.id === msgId
+              ? {
+                  ...m,
+                  voiceStatus: "done",
+                  text,
+                  inputSource: "voice",
+                }
+              : m,
+          ),
         );
         await sendQueryToAi(text, { durationMs });
       } catch (e) {
@@ -318,34 +404,44 @@ export function ChatPanel({
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto overscroll-y-contain min-h-0">
-        <ChatSessionTime at={sessionAt} />
-        <div className="space-y-3 py-2">
-          {messages.map((m) => (
-            <ChatMessageItem
-              key={m.id}
-              message={m}
-              runner={runner}
-              greeting={m.id === "greet" ? greeting : undefined}
-            />
-          ))}
-          {thinking && (
-            <div className="px-3 pr-14 text-sm text-secondary font-medium flex items-center gap-2">
-              <span className="inline-flex gap-1">
-                <span className="w-2 h-2 rounded-full bg-primary animate-bounce" />
-                <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:0.15s]" />
-                <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:0.3s]" />
-              </span>
-              对麦正在思考
-            </div>
-          )}
-          {chatError && (
-            <p className="mx-3 text-2xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
-              {chatError}
-            </p>
-          )}
-          <div ref={bottomRef} className="h-2" />
+      <div className="relative flex-1 min-h-0">
+        <div
+          ref={scrollContainerRef}
+          onScroll={onMessagesScroll}
+          className="absolute inset-0 overflow-y-auto overscroll-y-contain"
+        >
+          <ChatSessionTime at={sessionAt} />
+          <div className="space-y-3 py-2">
+            {messages.map((m) => (
+              <ChatMessageItem
+                key={m.id}
+                message={m}
+                runner={runner}
+                greeting={m.id === "greet" ? greeting : undefined}
+              />
+            ))}
+            {thinking && (
+              <div className="px-3 pr-14 text-sm text-secondary font-medium flex items-center gap-2">
+                <span className="inline-flex gap-1">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-bounce" />
+                  <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:0.15s]" />
+                  <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:0.3s]" />
+                </span>
+                对麦正在思考
+              </div>
+            )}
+            {chatError && (
+              <p className="mx-3 text-2xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+                {chatError}
+              </p>
+            )}
+            <div ref={bottomRef} className="h-2" />
+          </div>
         </div>
+        <ScrollToBottomButton
+          visible={showScrollToBottom}
+          onClick={() => scrollBottom("smooth")}
+        />
       </div>
 
       <div className="shrink-0 bg-white border-t border-secondary-border">

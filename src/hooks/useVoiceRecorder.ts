@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { VOICE_MAX_DURATION_MS, VOICE_MIN_RECORD_MS } from "@/lib/voice-message";
 
 export type VoiceRecorderPhase = "idle" | "recording" | "denied" | "unsupported";
 
-const MAX_MS = 60_000;
-const MIN_MS = 500;
+const MAX_MS = VOICE_MAX_DURATION_MS;
+const MIN_MS = VOICE_MIN_RECORD_MS;
 const STOP_TIMEOUT_MS = 2_000;
 
 function pickMimeType(): string | undefined {
@@ -81,7 +82,7 @@ export function useVoiceRecorder() {
       timerRef.current = setInterval(() => {
         const r = recorderRef.current;
         if (!r) return;
-        const ms = Date.now() - startedAtRef.current;
+        const ms = Math.min(Date.now() - startedAtRef.current, MAX_MS);
         setElapsedMs(ms);
         if (ms >= MAX_MS && r.state === "recording") {
           try {
@@ -131,7 +132,7 @@ export function useVoiceRecorder() {
         return;
       }
 
-      const duration = Date.now() - startedAtRef.current;
+      const duration = Math.min(Date.now() - startedAtRef.current, MAX_MS);
       let settled = false;
 
       const finish = (blob: Blob | null) => {

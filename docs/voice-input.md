@@ -3,8 +3,9 @@
 ## 流程（微信式）
 
 1. 点击输入栏左侧 **麦克风** → 输入区切换为 **「按住 说话」** 条（⌨️ 可切回键盘）。
-2. 松开后：聊天列表立即出现 **语音气泡**（可点击播放）。
-3. 后台 `POST /api/runner/chat/speech-to-text` 转写完成后，**自动** `POST /api/runner/chat` 发送文字给 AI（`inputSource: voice`、`voiceDurationMs`），运营端对话记录会标记为 **语音转写**。
+2. 松开后：聊天列表立即出现 **语音气泡**（可点击播放；气泡宽度与时长 1–60 秒成正比，参考微信）。
+3. 单条最长 **60 秒**，录满后自动发送。
+4. 后台 `POST /api/runner/chat/speech-to-text` 转写完成后，**自动** `POST /api/runner/chat` 发送文字给 AI（`inputSource: voice`、`voiceDurationMs`），运营端对话记录会标记为 **语音转写**。
 
 后端由 **8091 选手服务** 转发至 Dify：
 

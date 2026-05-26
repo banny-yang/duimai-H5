@@ -123,7 +123,7 @@ export default function RunnerApp({ eventGuid }: Props) {
         </div>
       </header>
 
-      <div className="shrink-0">
+      <div className="shrink-0 min-w-0 overflow-x-hidden">
         {!identityVerified && <IdentityVerifyBanner onVerify={openVerify} />}
         <NotificationBar event={event} onClick={handleNoticeClick} />
         <ShortcutGrid onSelect={handleShortcut} />
@@ -137,6 +137,7 @@ export default function RunnerApp({ eventGuid }: Props) {
         chatDisabledHint={chatDisabledHint}
         h5QuickQuestions={h5QuickQuestions}
         inboxPollEnabled={apiConnected && identityVerified}
+        historyEnabled={apiConnected && identityVerified}
       />
 
       <SosFloatingButton

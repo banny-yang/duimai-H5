@@ -137,6 +137,20 @@ export interface ChatInboxMessageVO {
   createdAt?: number;
 }
 
+export interface ChatHistoryMessageVO {
+  id: string;
+  role: "user" | "assistant" | "staff";
+  text: string;
+  inputSource?: "text" | "voice";
+  voiceDurationMs?: number;
+  createdAt?: number;
+}
+
+export interface ChatHistoryVO {
+  conversationId?: string;
+  messages: ChatHistoryMessageVO[];
+}
+
 export interface SosSubmitRequest {
   lat?: number;
   lng?: number;
@@ -414,6 +428,11 @@ export async function transcribeSpeech(audio: Blob) {
 /** 拉取危机中心人工回复（服务端 drain，每条仅送达一次） */
 export async function fetchChatInbox() {
   return apiGet<ChatInboxMessageVO[]>("/runner/chat/inbox");
+}
+
+/** 已绑定选手：最近聊天记录（刷新后恢复） */
+export async function fetchChatHistory(limit = 50) {
+  return apiGet<ChatHistoryVO>("/runner/chat/history", { limit: String(limit) });
 }
 
 const SYMPTOM_LABEL: Record<string, string> = {

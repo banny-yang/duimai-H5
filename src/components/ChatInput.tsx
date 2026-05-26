@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { VoiceRecordOverlay } from "@/components/VoiceRecordOverlay";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import { clampVoiceDurationMs } from "@/lib/voice-message";
 import { cn } from "@/lib/cn";
 
 export interface VoiceMessagePayload {
@@ -59,7 +60,7 @@ export function ChatInput({ onSendText, onVoiceMessage, disabled }: Props) {
       return;
     }
 
-    const durationMs = voice.elapsedMs;
+    const durationMs = clampVoiceDurationMs(voice.elapsedMs);
     const blob = await voice.stop();
     if (!blob) {
       if (voice.phase === "idle") {
@@ -115,6 +116,11 @@ export function ChatInput({ onSendText, onVoiceMessage, disabled }: Props) {
       capturePointerIdRef.current = null;
     }
   }, []);
+
+  useEffect(() => {
+    if (!isRecording || voice.elapsedMs < voice.maxMs) return;
+    void endPointer();
+  }, [isRecording, voice.elapsedMs, voice.maxMs, endPointer]);
 
   useEffect(() => {
     if (!isRecording) return;

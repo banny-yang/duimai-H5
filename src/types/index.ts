@@ -62,6 +62,9 @@ export interface ChatMessage {
   audioUrl?: string;
   audioDurationMs?: number;
   voiceStatus?: VoiceMessageStatus;
+  inputSource?: "text" | "voice";
+  /** 服务端历史语音无本地音频文件 */
+  voicePlaybackDisabled?: boolean;
   cardType?: ChatCardType;
   supply?: SupplyCardData;
   bib?: BibCardData;

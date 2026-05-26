@@ -72,8 +72,52 @@
     border-bottom: 1px solid rgba(6, 182, 212, 0.08);
   }
 
+  .emergency-notice-bar {
+    background: #ffffff;
+    border: 1px solid rgba(251, 113, 133, 0.35);
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, 0.05),
+      0 4px 14px rgba(244, 63, 94, 0.08);
+    max-width: calc(100% - 1.5rem);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .emergency-notice-bar:active {
+    background: #fffbfb;
+  }
+
+  .emergency-notice-marquee-mask {
+    flex: 1 1 0%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
   .shortcut-icon-wrap {
     background: linear-gradient(135deg, var(--primary-muted) 0%, rgba(8, 145, 178, 0.08) 100%);
+  }
+}
+
+@layer components {
+  @keyframes voice-wave-pulse {
+    0%,
+    100% {
+      transform: scaleY(0.35);
+      opacity: 0.65;
+    }
+    50% {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  .voice-wave-bar {
+    transform-origin: center bottom;
+  }
+
+  .voice-wave-bar--playing {
+    animation: voice-wave-pulse 0.75s ease-in-out infinite;
   }
 }
 
