@@ -10,6 +10,7 @@ import { RouteMapSheet } from "@/components/modals/RouteMapSheet";
 import { RunnerInfoSheet } from "@/components/modals/RunnerInfoSheet";
 import { ShuttleSheet } from "@/components/modals/ShuttleSheet";
 import { ShortcutGrid } from "@/components/ShortcutGrid";
+import { LegalSheet } from "@/components/LegalSheet";
 import { SosFloatingButton } from "@/components/sos/SosFloatingButton";
 import { SosFlowModal } from "@/components/sos/SosFlowModal";
 import { ConnectionErrorPage } from "@/components/ConnectionErrorPage";
@@ -48,6 +49,7 @@ export default function RunnerApp({ eventGuid }: Props) {
   const [pickupOpen, setPickupOpen] = useState(false);
   const [sosOpen, setSosOpen] = useState(false);
   const [sosToast, setSosToast] = useState<string | null>(null);
+  const [legal, setLegal] = useState<"privacy" | "terms" | null>(null);
 
   const openVerify = () => setVerifyOpen(true);
 
@@ -197,9 +199,15 @@ export default function RunnerApp({ eventGuid }: Props) {
         </div>
       )}
 
-      <p className="shrink-0 text-center text-2xs text-slate-300 py-0.5 pointer-events-none safe-bottom">
-        已对接 · 8091 · {eventGuid.slice(0, 8)}… · ?phase=pre|race|post
+      <p className="shrink-0 text-center text-2xs text-slate-300 py-1 safe-bottom flex justify-center gap-3">
+        <button type="button" className="underline" onClick={() => setLegal("privacy")}>
+          隐私政策
+        </button>
+        <button type="button" className="underline" onClick={() => setLegal("terms")}>
+          用户协议
+        </button>
       </p>
+      <LegalSheet type={legal ?? "privacy"} open={legal !== null} onClose={() => setLegal(null)} />
     </div>
   );
 }
