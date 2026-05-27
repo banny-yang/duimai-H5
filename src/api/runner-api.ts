@@ -26,14 +26,22 @@ export function setStoredEventGuid(guid: string | null) {
   else sessionStorage.removeItem(EVENT_GUID_KEY);
 }
 
-const EVENT_GUID_RE =
+/** 带横线标准 UUID */
+const EVENT_GUID_DASHED_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Hutool fastSimpleUUID / 后端新建赛事 public_guid（32 位十六进制，无横线） */
+const EVENT_GUID_SIMPLE_RE = /^[0-9a-f]{32}$/i;
+
+export function isEventPublicGuid(value: string): boolean {
+  const v = value.trim();
+  return EVENT_GUID_DASHED_RE.test(v) || EVENT_GUID_SIMPLE_RE.test(v);
+}
 
 /** 从路径 /{event_guid} 解析赛事 GUID */
 export function readEventGuidFromPath(): string | undefined {
   const segments = window.location.pathname.split("/").filter(Boolean);
   const last = segments[segments.length - 1];
-  if (last && EVENT_GUID_RE.test(last)) {
+  if (last && isEventPublicGuid(last)) {
     return last;
   }
   return undefined;
@@ -44,14 +52,16 @@ export function readEventGuidFromUrl(): string | undefined {
   const fromPath = readEventGuidFromPath();
   if (fromPath) return fromPath;
   const q = new URLSearchParams(window.location.search);
-  return q.get("event_guid")?.trim() || q.get("event")?.trim() || undefined;
+  const legacy = q.get("event_guid")?.trim() || q.get("event")?.trim();
+  if (legacy && isEventPublicGuid(legacy)) return legacy;
+  return undefined;
 }
 
 /** 将 ?event_guid= 旧链接重定向为 /{guid} */
 export function redirectLegacyEventGuidUrl(): void {
   const q = new URLSearchParams(window.location.search);
   const legacy = q.get("event_guid")?.trim() || q.get("event")?.trim();
-  if (!legacy || !EVENT_GUID_RE.test(legacy)) return;
+  if (!legacy || !isEventPublicGuid(legacy)) return;
   if (readEventGuidFromPath()) return;
   q.delete("event_guid");
   q.delete("event");
