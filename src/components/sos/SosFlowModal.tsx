@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { submitSos } from "@/api/runner-api";
+import {
+  fetchSosRescueConfig,
+  submitSos,
+  submitSosBeacon,
+} from "@/api/runner-api";
+import { enqueueOfflineSos } from "@/lib/sos-offline-queue";
 
 import { ApiError } from "@/lib/api-client";
 
@@ -40,6 +45,8 @@ interface Props {
 
   open: boolean;
 
+  eventGuid: string;
+
   runner: RunnerProfile;
 
   apiConnected: boolean;
@@ -52,7 +59,14 @@ interface Props {
 
 
 
-export function SosFlowModal({ open, runner, apiConnected, onClose, onSubmitted }: Props) {
+export function SosFlowModal({
+  open,
+  eventGuid,
+  runner,
+  apiConnected,
+  onClose,
+  onSubmitted,
+}: Props) {
 
   const [step, setStep] = useState<"gps" | "symptom" | "done">("gps");
 
@@ -64,7 +78,23 @@ export function SosFlowModal({ open, runner, apiConnected, onClose, onSubmitted 
 
   const [submitting, setSubmitting] = useState(false);
 
+  const [rescuePhone, setRescuePhone] = useState("120");
 
+  const [organizerPhone, setOrganizerPhone] = useState<string | null>(null);
+
+
+
+  useEffect(() => {
+    if (!open || !eventGuid) return;
+    fetchSosRescueConfig(eventGuid)
+      .then((cfg) => {
+        if (cfg.rescuePhone) setRescuePhone(cfg.rescuePhone);
+        if (cfg.organizerPhone) setOrganizerPhone(cfg.organizerPhone);
+      })
+      .catch(() => {
+        /* 使用默认 120 */
+      });
+  }, [open, eventGuid]);
 
   useEffect(() => {
 
@@ -184,10 +214,14 @@ export function SosFlowModal({ open, runner, apiConnected, onClose, onSubmitted 
 
 
 
-      if (!apiConnected) {
-        submittedRef.current = false;
+      if (!apiConnected || !navigator.onLine) {
+        enqueueOfflineSos(payload);
+        setStep("done");
+        onSubmitted(
+          payload,
+          "网络不可用，已本地记录并尝试弱网信标；请立即拨打下方救援电话",
+        );
         setSubmitting(false);
-        onSubmitted(payload, "未连接后端，SOS 上报失败");
         return;
       }
 
@@ -200,12 +234,24 @@ export function SosFlowModal({ open, runner, apiConnected, onClose, onSubmitted 
           signal: payload.signal,
           symptomKey: symptom,
         });
-        serverMessage = res.message;
+        serverMessage = res.comfortMessage ?? res.message;
       } catch (e) {
+        enqueueOfflineSos(payload);
+        try {
+          await submitSosBeacon({
+            lat: payload.gps.lat,
+            lng: payload.gps.lng,
+            battery: payload.battery,
+          });
+        } catch {
+          /* ignore */
+        }
         submittedRef.current = false;
         setSubmitting(false);
         serverMessage =
-          e instanceof ApiError ? e.message : "SOS 上报失败，请稍后重试";
+          e instanceof ApiError
+            ? `${e.message}（已离线缓存，请拨打救援电话）`
+            : "SOS 上报失败，已离线缓存，请拨打救援电话";
         onSubmitted(payload, serverMessage);
         return;
       }
@@ -309,6 +355,23 @@ export function SosFlowModal({ open, runner, apiConnected, onClose, onSubmitted 
 
             </p>
 
+            <div className="flex gap-2 mb-3">
+              <a
+                href={`tel:${rescuePhone.replace(/\s/g, "")}`}
+                className="flex-1 text-center py-2 rounded-lg bg-red-600 text-white text-xs font-bold"
+              >
+                拨打 {rescuePhone}
+              </a>
+              {organizerPhone && (
+                <a
+                  href={`tel:${organizerPhone.replace(/\s/g, "")}`}
+                  className="flex-1 text-center py-2 rounded-lg border border-red-300 text-red-700 text-xs font-bold"
+                >
+                  组委会
+                </a>
+              )}
+            </div>
+
             <div className="space-y-3">
 
               {SYMPTOMS.map((s) => (
@@ -362,6 +425,23 @@ export function SosFlowModal({ open, runner, apiConnected, onClose, onSubmitted 
               组委会与最近医疗志愿者将收到您的定位
 
             </p>
+
+            <div className="flex gap-2 mt-4">
+              <a
+                href={`tel:${rescuePhone.replace(/\s/g, "")}`}
+                className="flex-1 text-center py-3 rounded-xl bg-red-600 text-white font-semibold text-sm"
+              >
+                拨打 {rescuePhone}
+              </a>
+              {organizerPhone && (
+                <a
+                  href={`tel:${organizerPhone.replace(/\s/g, "")}`}
+                  className="flex-1 text-center py-3 rounded-xl border border-red-300 text-red-700 font-semibold text-sm"
+                >
+                  组委会
+                </a>
+              )}
+            </div>
 
             <button
 

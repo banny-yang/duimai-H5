@@ -9,7 +9,9 @@ export function SupplyStationCard({ data }: Props) {
     <div className="rounded-xl border border-primary/20 bg-primary-surface overflow-hidden text-sm shadow-sm">
       <div
         className="px-3 py-2.5 text-white font-semibold leading-snug"
-        style={{ background: "linear-gradient(90deg, #06b6d4 0%, #0e7490 100%)" }}
+        style={{
+          background: "linear-gradient(90deg, var(--primary) 0%, var(--primary-deeper) 100%)",
+        }}
       >
         🏪 下一站点：{data.stationName}（距离您 {data.distance}）
       </div>

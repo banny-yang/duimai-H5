@@ -5,6 +5,7 @@ import {
   enterSession,
   fetchNotice,
   fetchH5QuickQuestions,
+  fetchOfflinePack,
   fetchPublicEvent,
   forgetRunnerIdentity,
   applyNoticeToEvent,
@@ -12,7 +13,9 @@ import {
   mapSessionToRunner,
   setStoredEventGuid,
 } from "@/api/runner-api";
-import type { H5QuickQuestions, SessionEnterVO } from "@/api/runner-api";
+import type { H5Branding, H5QuickQuestions, SessionEnterVO } from "@/api/runner-api";
+import { writeOfflinePack, readOfflinePack } from "@/lib/h5-offline-cache";
+import { resolveLocale, type H5Locale } from "@/lib/i18n";
 import { ApiError } from "@/lib/api-client";
 import { readPhaseOverride, resolveH5Phase } from "@/lib/event-phase";
 import { getStoredIdentity } from "@/lib/runner-identity";
@@ -51,6 +54,9 @@ export interface RunnerContextState {
   eventGuid: string | null;
   eventStatus: string | null;
   h5QuickQuestions: H5QuickQuestions | null;
+  branding: H5Branding | null;
+  locale: H5Locale;
+  offlineMode: boolean;
   aiEnabled: boolean;
   /** 是否已完成参赛号+身份证验证（含本地缓存自动恢复） */
   identityVerified: boolean;
@@ -70,6 +76,9 @@ export function useRunnerContext(eventGuidFromRoute: string): RunnerContextState
   const [eventGuid, setEventGuid] = useState<string | null>(eventGuidParam ?? null);
   const [eventStatus, setEventStatus] = useState<string | null>(null);
   const [h5QuickQuestions, setH5QuickQuestions] = useState<H5QuickQuestions | null>(null);
+  const [branding, setBranding] = useState<H5Branding | null>(null);
+  const [locale, setLocale] = useState<H5Locale>("zh");
+  const [offlineMode, setOfflineMode] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [identityVerified, setIdentityVerified] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -112,15 +121,56 @@ export function useRunnerContext(eventGuidFromRoute: string): RunnerContextState
       try {
         setStoredEventGuid(eventGuidParam);
 
-        const [pub, quickQuestions] = await Promise.all([
-          fetchPublicEvent(eventGuidParam),
-          fetchH5QuickQuestions(eventGuidParam),
-        ]);
+        const langQ = new URLSearchParams(window.location.search).get("lang");
+        let pub;
+        let quickQuestions: H5QuickQuestions | null = null;
+        let fromOfflineCache = false;
+        try {
+          const [p, q] = await Promise.all([
+            fetchPublicEvent(eventGuidParam),
+            fetchH5QuickQuestions(eventGuidParam),
+          ]);
+          pub = p;
+          quickQuestions = q;
+          void fetchOfflinePack(eventGuidParam)
+            .then((pack) => {
+              writeOfflinePack(eventGuidParam, {
+                eventGuid: pack.eventGuid,
+                eventName: pack.eventName,
+                phase: pack.phase,
+                cachedAt: pack.cachedAt,
+                quickQuestions: pack.quickQuestions ?? q,
+                faqSnippets: pack.faqSnippets ?? [],
+                branding: pack.branding ?? p.branding ?? null,
+              });
+            })
+            .catch(() => undefined);
+        } catch (loadErr) {
+          const cached = readOfflinePack(eventGuidParam);
+          if (!cached) throw loadErr;
+          pub = {
+            eventGuid: eventGuidParam,
+            eventId: "",
+            eventName: cached.eventName,
+            phase: cached.phase,
+            status: "published",
+            aiEnabled: false,
+            agent: { assistantName: "助手" },
+            h5QuickQuestions: cached.quickQuestions,
+            branding: cached.branding ?? null,
+          };
+          quickQuestions = cached.quickQuestions;
+          fromOfflineCache = true;
+        }
+        let session: SessionEnterVO | null = null;
+        if (!fromOfflineCache) {
+          session = await enterSession(eventGuidParam);
+          session = await tryRestoreIdentity(eventGuidParam, session);
+        }
 
-        let session = await enterSession(eventGuidParam);
-        session = await tryRestoreIdentity(eventGuidParam, session);
-
-        const notice = await fetchNotice(eventGuidParam).catch(() => undefined);
+        const notice = fromOfflineCache
+          ? undefined
+          : await fetchNotice(eventGuidParam).catch(() => undefined);
 
         if (cancelled) return;
 
@@ -132,13 +182,16 @@ export function useRunnerContext(eventGuidFromRoute: string): RunnerContextState
           phaseOverride,
         });
 
-        applySession(session);
+        if (session) applySession(session);
         setEvent({ ...baseEvent, phase });
         setEventGuid(pub.eventGuid);
         setEventStatus(pub.status ?? null);
         setH5QuickQuestions(quickQuestions);
+        setBranding(pub.branding ?? null);
+        setLocale(resolveLocale(langQ, pub.branding?.h5Locale));
         setAiEnabled(pub.aiEnabled);
         setApiConnected(true);
+        setOfflineMode(fromOfflineCache);
       } catch (e) {
         if (cancelled) return;
         const msg =
@@ -155,6 +208,8 @@ export function useRunnerContext(eventGuidFromRoute: string): RunnerContextState
         setEventGuid(eventGuidParam ?? null);
         setEventStatus(null);
         setH5QuickQuestions(null);
+        setBranding(null);
+        setOfflineMode(false);
         setAiEnabled(false);
         setIdentityVerified(false);
       } finally {
@@ -220,6 +275,9 @@ export function useRunnerContext(eventGuidFromRoute: string): RunnerContextState
     eventGuid,
     eventStatus,
     h5QuickQuestions,
+    branding,
+    locale,
+    offlineMode,
     aiEnabled,
     identityVerified,
     loading,

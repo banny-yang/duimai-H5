@@ -15,6 +15,8 @@ import { SosFloatingButton } from "@/components/sos/SosFloatingButton";
 import { SosFlowModal } from "@/components/sos/SosFlowModal";
 import { ConnectionErrorPage } from "@/components/ConnectionErrorPage";
 import { useRunnerContext } from "@/hooks/useRunnerContext";
+import { t } from "@/lib/i18n";
+import { applyH5BrandTheme } from "@/lib/h5-brand-theme";
 import type { H5Phase, SosPayload } from "@/types";
 
 type Sheet = "info" | "map" | "shuttle" | null;
@@ -34,12 +36,23 @@ export default function RunnerApp({ eventGuid }: Props) {
     error,
     apiConnected,
     h5QuickQuestions,
+    branding,
+    locale,
+    offlineMode,
     identityVerified,
     verifyIdentity,
   } = useRunnerContext(eventGuid);
 
+  const displayTitle = branding?.brandTitle?.trim() || event.name;
+  const headerLogo = branding?.logoUrl?.trim();
+  const footerSupport = branding?.footerText?.trim();
+
   const [runner, setRunner] = useState(initialRunner);
   const [verifyOpen, setVerifyOpen] = useState(false);
+
+  useEffect(() => {
+    applyH5BrandTheme(branding);
+  }, [branding]);
 
   useEffect(() => {
     setRunner(initialRunner);
@@ -57,7 +70,7 @@ export default function RunnerApp({ eventGuid }: Props) {
     return (
       <div className="flex flex-col min-h-[100dvh] items-center justify-center bg-white px-6">
         <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="mt-4 text-sm text-secondary font-medium">正在加载赛事…</p>
+        <p className="mt-4 text-sm text-secondary font-medium">{t("zh", "loadingEvent")}</p>
       </div>
     );
   }
@@ -72,9 +85,11 @@ export default function RunnerApp({ eventGuid }: Props) {
   }
 
   const chatEnabled = apiConnected && aiEnabled;
-  const chatDisabledHint = !aiEnabled
-    ? "赛事 AI 未配置（请检查 Dify）"
-    : undefined;
+  const chatDisabledHint = offlineMode
+    ? t(locale, "offlineHint")
+    : !aiEnabled
+      ? t(locale, "aiDisabled")
+      : undefined;
 
   const handleShortcut = (id: string) => {
     if (id === "info" && !identityVerified) {
@@ -107,9 +122,16 @@ export default function RunnerApp({ eventGuid }: Props) {
   return (
     <div className="flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-white">
       <header className="shrink-0 z-30 border-b border-secondary-border bg-white px-3 py-2.5 flex items-center justify-between safe-top">
-        <div className="min-w-0">
-          <p className="text-2xs text-secondary font-medium">对麦智能 · 选手助手</p>
-          <p className="text-sm font-bold text-ink truncate">{event.name}</p>
+        <div className="min-w-0 flex items-center gap-2">
+          {headerLogo ? (
+            <img src={headerLogo} alt="" className="h-8 w-8 rounded object-contain shrink-0" />
+          ) : null}
+          <div className="min-w-0">
+            <p className="text-2xs text-secondary font-medium">
+              {locale === "en" ? "Duimai Runner" : "对麦智能 · 选手助手"}
+            </p>
+            <p className="text-sm font-bold text-ink truncate">{displayTitle}</p>
+          </div>
         </div>
         <div className="shrink-0 flex items-center gap-2">
           {!identityVerified && (
@@ -118,7 +140,7 @@ export default function RunnerApp({ eventGuid }: Props) {
               onClick={openVerify}
               className="text-2xs font-bold text-primary px-2 py-1 rounded-full border border-primary/30 bg-primary-surface"
             >
-              身份验证
+              {t(locale, "verifyIdentity")}
             </button>
           )}
           <PhaseBadge phase={phase} />
@@ -149,6 +171,7 @@ export default function RunnerApp({ eventGuid }: Props) {
       />
       <SosFlowModal
         open={sosOpen}
+        eventGuid={eventGuid}
         runner={runner}
         apiConnected={apiConnected}
         onClose={() => setSosOpen(false)}
@@ -199,13 +222,19 @@ export default function RunnerApp({ eventGuid }: Props) {
         </div>
       )}
 
-      <p className="shrink-0 text-center text-2xs text-slate-300 py-1 safe-bottom flex justify-center gap-3">
-        <button type="button" className="underline" onClick={() => setLegal("privacy")}>
-          隐私政策
-        </button>
-        <button type="button" className="underline" onClick={() => setLegal("terms")}>
-          用户协议
-        </button>
+      <p className="shrink-0 text-center text-2xs text-secondary py-1 safe-bottom flex flex-col items-center gap-1">
+        {footerSupport ? (
+          <span className="text-primary-dark font-medium">{footerSupport}</span>
+        ) : null}
+        {!branding?.hidePoweredBy && <span>{t(locale, "poweredBy")}</span>}
+        <span className="flex justify-center gap-3 text-primary-dark/80">
+          <button type="button" className="underline" onClick={() => setLegal("privacy")}>
+            {locale === "en" ? "Privacy" : "隐私政策"}
+          </button>
+          <button type="button" className="underline" onClick={() => setLegal("terms")}>
+            {locale === "en" ? "Terms" : "用户协议"}
+          </button>
+        </span>
       </p>
       <LegalSheet type={legal ?? "privacy"} open={legal !== null} onClose={() => setLegal(null)} />
     </div>

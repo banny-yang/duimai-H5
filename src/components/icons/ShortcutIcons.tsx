@@ -1,10 +1,8 @@
-/** 金刚区统一单色线框 · 品牌青 */
-
-const STROKE = "#0891b2";
+/** 金刚区图标跟随主题色（父级需有 text-primary-dark） */
 
 const strokeProps = {
   fill: "none",
-  stroke: STROKE,
+  stroke: "currentColor",
   strokeWidth: 1.75,
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,

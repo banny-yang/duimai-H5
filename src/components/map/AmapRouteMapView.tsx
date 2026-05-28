@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadAmapMap, type AmapClientConfig } from "@/lib/amap-loader";
-import { markerLabelHtml } from "@/lib/route-map-markers";
+import { markerLabelHtml, type PoiHeatLevel } from "@/lib/route-map-markers";
 import type { EventRouteLine, RouteMapMarker } from "@/types/route-map";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -11,6 +11,8 @@ interface Props {
   parentLoading?: boolean;
   selectedMarkerId?: string | null;
   onMarkerSelect?: (id: string | null) => void;
+  /** markerId → 热度，驱动 POI 变色 */
+  markerHeat?: Record<string, PoiHeatLevel>;
 }
 
 function canShowMap(amapCfg: AmapClientConfig | null, line: EventRouteLine | null): boolean {
@@ -34,6 +36,7 @@ export function AmapRouteMapView({
   parentLoading,
   selectedMarkerId = null,
   onMarkerSelect,
+  markerHeat = {},
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -56,11 +59,11 @@ export function AmapRouteMapView({
       const selected = id === selectedId;
       entry.overlay.setzIndex(selected ? 200 : 100);
       entry.overlay.setLabel({
-        content: markerLabelHtml(entry.data, selected),
+        content: markerLabelHtml(entry.data, selected, markerHeat[id]),
         direction: "top",
       });
     });
-  }, []);
+  }, [markerHeat]);
 
   useEffect(() => {
     if (parentLoading) return;
@@ -117,7 +120,7 @@ export function AmapRouteMapView({
             title: m.label,
             zIndex: selected ? 200 : 100,
             label: {
-              content: markerLabelHtml(m, selected),
+              content: markerLabelHtml(m, selected, markerHeat[m.id]),
               direction: "top",
             },
             cursor: "pointer",
@@ -156,7 +159,7 @@ export function AmapRouteMapView({
     return () => {
       cancelled = true;
     };
-  }, [parentLoading, amapCfg, geometryKey, line, applyMarkerStyles, onMarkerSelect]);
+  }, [parentLoading, amapCfg, geometryKey, line, applyMarkerStyles, onMarkerSelect, markerHeat]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
@@ -167,7 +170,7 @@ export function AmapRouteMapView({
         mapRef.current.setCenter([m.lng, m.lat]);
       }
     }
-  }, [selectedMarkerId, mapReady, line, applyMarkerStyles]);
+  }, [selectedMarkerId, mapReady, line, applyMarkerStyles, markerHeat]);
 
   useEffect(() => {
     return () => {

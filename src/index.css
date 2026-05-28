@@ -6,11 +6,13 @@
 @layer base {
   :root {
     --primary: #06b6d4;
+    --primary-rgb: 6 182 212;
     --primary-dark: #0891b2;
     --primary-deeper: #0e7490;
     --primary-muted: rgba(6, 182, 212, 0.14);
     --primary-surface: #f0f9fa;
     --primary-glow: #f4fbfb;
+    --shadow-primary-sm: 0 2px 8px color-mix(in srgb, #06b6d4 28%, transparent);
 
     --secondary-bg: #f8fafc;
     --secondary-border: #e2e8f0;
@@ -95,7 +97,11 @@
   }
 
   .shortcut-icon-wrap {
-    background: linear-gradient(135deg, var(--primary-muted) 0%, rgba(8, 145, 178, 0.08) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--primary-muted) 0%,
+      color-mix(in srgb, var(--primary) 8%, transparent) 100%
+    );
   }
 }
 

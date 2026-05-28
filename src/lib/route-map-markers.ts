@@ -26,12 +26,37 @@ function escapeHtml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
-export function markerLabelHtml(m: RouteMapMarker, selected: boolean): string {
+export type PoiHeatLevel = "normal" | "warning" | "critical";
+
+function heatStyle(level?: PoiHeatLevel): string {
+  if (level === "critical") {
+    return "animation:pulse 1s infinite;box-shadow:0 0 0 2px #fff,0 0 8px #ef4444;";
+  }
+  if (level === "warning") {
+    return "box-shadow:0 0 0 2px #f97316;";
+  }
+  return "";
+}
+
+export function markerLabelHtml(
+  m: RouteMapMarker,
+  selected: boolean,
+  heatLevel?: PoiHeatLevel,
+): string {
   const type = (m.type ?? "other") as RouteMapMarkerType;
-  const { bg, color } = MARKER_COLORS[type] ?? MARKER_COLORS.other;
+  let { bg, color } = MARKER_COLORS[type] ?? MARKER_COLORS.other;
+  if (heatLevel === "warning") {
+    bg = "#ea580c";
+  } else if (heatLevel === "critical") {
+    bg = "#dc2626";
+  }
   const text = escapeHtml(m.label?.trim() || MARKER_TYPE_LABELS[type]);
   const ring = selected
     ? "box-shadow:0 0 0 2px #fff,0 0 0 4px #0891b2;"
     : "";
-  return `<div style="background:${bg};color:${color};padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;white-space:nowrap;${ring}">${selected ? "▶ " : ""}${text}</div>`;
+  return `<div style="background:${bg};color:${color};padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;white-space:nowrap;${ring}${heatStyle(heatLevel)}">${selected ? "▶ " : ""}${text}</div>`;
+}
+
+export function amapNavigationUrl(lng: number, lat: number, name: string): string {
+  return `https://uri.amap.com/marker?position=${lng},${lat}&name=${encodeURIComponent(name)}`;
 }

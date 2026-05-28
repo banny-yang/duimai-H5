@@ -6,11 +6,12 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#06b6d4",
-          dark: "#0891b2",
-          deeper: "#0e7490",
-          surface: "#f0f9fa",
-          glow: "#f4fbfb",
+          DEFAULT: "rgb(var(--primary-rgb) / <alpha-value>)",
+          dark: "var(--primary-dark)",
+          deeper: "var(--primary-deeper)",
+          surface: "var(--primary-surface)",
+          glow: "var(--primary-glow)",
+          muted: "var(--primary-muted)",
         },
         secondary: {
           DEFAULT: "#64748b",
@@ -27,7 +28,7 @@ export default {
         "2xs": "0.625rem",
       },
       boxShadow: {
-        "primary-sm": "0 2px 8px rgba(6, 182, 212, 0.28)",
+        "primary-sm": "var(--shadow-primary-sm)",
         "alert-glow": "0 10px 28px rgba(211, 47, 47, 0.4), 0 0 20px rgba(255, 59, 48, 0.25)",
       },
       animation: {

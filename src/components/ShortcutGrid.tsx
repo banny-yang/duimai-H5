@@ -23,7 +23,7 @@ export function ShortcutGrid({ onSelect }: Props) {
               onClick={() => onSelect(s.id)}
               className="flex flex-col items-center rounded-xl border border-secondary-border bg-white shadow-sm px-2 py-3 text-center min-h-[96px] transition-all duration-150 active:border-2 active:border-primary active:shadow-primary-sm active:translate-y-0.5 active:bg-primary-surface"
             >
-              <span className="shortcut-icon-wrap w-10 h-10 rounded-lg flex items-center justify-center shrink-0">
+              <span className="shortcut-icon-wrap w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-primary-dark">
                 <Icon className="w-6 h-6" />
               </span>
               <span className="mt-2 text-xs font-bold text-ink leading-snug line-clamp-2 w-full">

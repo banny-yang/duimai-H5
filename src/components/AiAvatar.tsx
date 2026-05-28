@@ -5,8 +5,8 @@ export function AiAvatar({ size = "sm" }: { size?: "sm" | "md" }) {
     <span
       className={`${dim} shrink-0 rounded-full flex items-center justify-center font-bold text-white`}
       style={{
-        background: "linear-gradient(145deg, #06b6d4 0%, #0e7490 100%)",
-        boxShadow: "0 1px 4px rgba(6, 182, 212, 0.35)",
+        background: "linear-gradient(145deg, var(--primary) 0%, var(--primary-deeper) 100%)",
+        boxShadow: "var(--shadow-primary-sm)",
       }}
       aria-hidden
     >

@@ -1,4 +1,6 @@
+import { amapNavigationUrl } from "@/lib/route-map-markers";
 import { buildRouteMapListItems } from "@/lib/route-map-list";
+import type { PoiHeatLevel } from "@/lib/route-map-markers";
 import type { EventRouteLine } from "@/types/route-map";
 
 interface Props {
@@ -6,6 +8,7 @@ interface Props {
   loading?: boolean;
   selectedMarkerId?: string | null;
   onSelect?: (id: string | null) => void;
+  markerHeat?: Record<string, PoiHeatLevel>;
 }
 
 const TYPE_STYLE: Record<string, string> = {
@@ -22,6 +25,7 @@ export function RouteMapMarkerList({
   loading,
   selectedMarkerId,
   onSelect,
+  markerHeat = {},
 }: Props) {
   const items = buildRouteMapListItems(line);
 
@@ -45,27 +49,50 @@ export function RouteMapMarkerList({
     <ul className="space-y-2 max-h-44 overflow-y-auto">
       {items.map((p) => {
         const selected = p.id === selectedMarkerId;
+        const heat = markerHeat[p.id] ?? "normal";
+        const heatRing =
+          heat === "critical"
+            ? "ring-2 ring-red-500 animate-pulse"
+            : heat === "warning"
+              ? "ring-1 ring-orange-400"
+              : "";
+        const marker = line?.markers.find((m) => m.id === p.id);
         return (
           <li key={p.id}>
-            <button
-              type="button"
-              className={`w-full flex items-center justify-between gap-2 text-sm border rounded-lg px-3 py-2 text-left transition-colors ${
-                selected
-                  ? "border-primary bg-primary/5 ring-1 ring-primary/30"
-                  : "border-slate-100 bg-white hover:bg-slate-50"
+            <div
+              className={`flex items-stretch gap-1 border rounded-lg overflow-hidden ${heatRing} ${
+                selected ? "border-primary" : "border-slate-100"
               }`}
-              onClick={() => onSelect?.(selected ? null : p.id)}
             >
-              <div className="min-w-0 flex items-center gap-2">
-                <span
-                  className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded ${TYPE_STYLE[p.type] ?? TYPE_STYLE.other}`}
+              <button
+                type="button"
+                className={`flex-1 flex items-center justify-between gap-2 text-sm px-3 py-2 text-left transition-colors ${
+                  selected ? "bg-primary/5" : "bg-white hover:bg-slate-50"
+                }`}
+                onClick={() => onSelect?.(selected ? null : p.id)}
+              >
+                <div className="min-w-0 flex items-center gap-2">
+                  <span
+                    className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded ${TYPE_STYLE[p.type] ?? TYPE_STYLE.other}`}
+                  >
+                    {p.typeLabel}
+                  </span>
+                  <span className="font-medium text-ink truncate">{p.label}</span>
+                </div>
+                <span className="shrink-0 text-slate-500 tabular-nums text-xs">{p.kmText}</span>
+              </button>
+              {marker && (
+                <a
+                  href={amapNavigationUrl(marker.lng, marker.lat, marker.label)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 px-2 flex items-center text-[10px] font-semibold text-primary border-l border-slate-100 bg-slate-50"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  {p.typeLabel}
-                </span>
-                <span className="font-medium text-ink truncate">{p.label}</span>
-              </div>
-              <span className="shrink-0 text-slate-500 tabular-nums text-xs">{p.kmText}</span>
-            </button>
+                  导航
+                </a>
+              )}
+            </div>
           </li>
         );
       })}

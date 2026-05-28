@@ -5,8 +5,10 @@ import { RouteMapMarkerList } from "@/components/map/RouteMapMarkerList";
 import {
   fetchAmapClientConfig,
   fetchEventRouteMapBundle,
+  fetchMapPoiHeat,
   fetchProfile,
 } from "@/api/runner-api";
+import type { PoiHeatLevel } from "@/lib/route-map-markers";
 import type { AmapClientConfig } from "@/lib/amap-loader";
 import { buildRouteMapListItems } from "@/lib/route-map-list";
 import {
@@ -33,6 +35,7 @@ export function RouteMapSheet({ open, eventGuid, runnerCategory, onClose }: Prop
   const [activeRouteId, setActiveRouteId] = useState<string>("");
   const [profileCategory, setProfileCategory] = useState<string | undefined>(runnerCategory);
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
+  const [markerHeat, setMarkerHeat] = useState<Record<string, PoiHeatLevel>>({});
 
   useEffect(() => {
     setProfileCategory(runnerCategory);
@@ -80,6 +83,30 @@ export function RouteMapSheet({ open, eventGuid, runnerCategory, onClose }: Prop
     if (!open || !eventGuid) return;
     void loadRouteData();
   }, [open, eventGuid, loadRouteData]);
+
+  useEffect(() => {
+    if (!open || !eventGuid || !activeRouteId) return;
+    let cancelled = false;
+    const loadHeat = async () => {
+      try {
+        const rows = await fetchMapPoiHeat(eventGuid, activeRouteId);
+        if (cancelled) return;
+        const map: Record<string, PoiHeatLevel> = {};
+        for (const r of rows) {
+          map[r.markerId] = r.heatLevel;
+        }
+        setMarkerHeat(map);
+      } catch {
+        if (!cancelled) setMarkerHeat({});
+      }
+    };
+    void loadHeat();
+    const iv = window.setInterval(loadHeat, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(iv);
+    };
+  }, [open, eventGuid, activeRouteId]);
 
   const activeLine: EventRouteLine | null = useMemo(() => {
     if (!bundle) return null;
@@ -146,6 +173,7 @@ export function RouteMapSheet({ open, eventGuid, runnerCategory, onClose }: Prop
         parentLoading={loading}
         selectedMarkerId={selectedMarkerId}
         onMarkerSelect={setSelectedMarkerId}
+        markerHeat={markerHeat}
       />
 
       <div className="mt-4">
@@ -157,6 +185,7 @@ export function RouteMapSheet({ open, eventGuid, runnerCategory, onClose }: Prop
           loading={loading}
           selectedMarkerId={selectedMarkerId}
           onSelect={setSelectedMarkerId}
+          markerHeat={markerHeat}
         />
       </div>
 
@@ -175,6 +204,12 @@ export function RouteMapSheet({ open, eventGuid, runnerCategory, onClose }: Prop
         </span>
         <span className="inline-flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-amber-500" /> 检查点
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-orange-500 ring-1 ring-orange-300" /> 咨询偏多
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> 热点预警
         </span>
       </div>
     </SheetModal>

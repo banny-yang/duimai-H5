@@ -90,6 +90,15 @@ export interface H5QuickQuestions {
   post?: string[];
 }
 
+export interface H5Branding {
+  logoUrl?: string;
+  brandTitle?: string;
+  themeColor?: string;
+  footerText?: string;
+  h5Locale?: string;
+  hidePoweredBy?: boolean;
+}
+
 export interface PublicEventVO {
   eventGuid: string;
   eventId: string;
@@ -105,6 +114,21 @@ export interface PublicEventVO {
     greetingTemplate?: string;
   };
   h5QuickQuestions?: H5QuickQuestions | null;
+  branding?: H5Branding | null;
+}
+
+export interface OfflinePackVO {
+  eventGuid: string;
+  eventName: string;
+  phase: string;
+  cachedAt: string;
+  quickQuestions?: H5QuickQuestions | null;
+  faqSnippets?: string[];
+  branding?: H5Branding | null;
+}
+
+export async function fetchOfflinePack(eventGuid: string): Promise<OfflinePackVO> {
+  return apiGet<OfflinePackVO>("/runner/event/offline-pack", { eventGuid });
 }
 
 export interface NoticeVO {
@@ -173,6 +197,8 @@ export interface SosSubmitRequest {
 export interface SosSubmitResult {
   accepted: boolean;
   message: string;
+  comfortMessage?: string;
+  rescuePhone?: string;
 }
 
 export function mapSessionToRunner(s: SessionEnterVO): RunnerProfile {
@@ -309,8 +335,21 @@ export async function fetchSelectableEvents() {
   return list.filter((e) => isH5ApprovedEvent(e.status));
 }
 
+function normalizeBranding(raw: H5Branding | null | undefined): H5Branding | null {
+  if (!raw) return null;
+  return {
+    logoUrl: raw.logoUrl?.trim() ?? "",
+    brandTitle: raw.brandTitle?.trim() ?? "",
+    themeColor: raw.themeColor?.trim() || "blue",
+    footerText: raw.footerText?.trim() ?? "",
+    h5Locale: raw.h5Locale?.trim() || "zh",
+    hidePoweredBy: Boolean(raw.hidePoweredBy),
+  };
+}
+
 export async function fetchPublicEvent(eventGuid: string) {
-  return apiGet<PublicEventVO>("/runner/event/public", { eventGuid }, false);
+  const data = await apiGet<PublicEventVO>("/runner/event/public", { eventGuid }, false);
+  return { ...data, branding: normalizeBranding(data.branding) };
 }
 
 export interface AmapClientConfigVO {
@@ -348,6 +387,33 @@ export async function fetchEventRouteLine(
 }
 
 /** 解析当前应展示的线路（组别优先） */
+export interface MapPoiHeatVO {
+  markerId: string;
+  heatLevel: "normal" | "warning" | "critical";
+  mentionCount?: number;
+  topic?: string;
+}
+
+export async function fetchMapPoiHeat(eventGuid: string, routeId?: string) {
+  const params: Record<string, string> = { eventGuid };
+  if (routeId) params.routeId = routeId;
+  return apiGet<MapPoiHeatVO[]>("/runner/map/poi-heat", params, false);
+}
+
+export interface SosRescueConfigVO {
+  rescuePhone: string;
+  organizerPhone?: string;
+  beaconEnabled?: boolean;
+}
+
+export async function fetchSosRescueConfig(eventGuid: string) {
+  return apiGet<SosRescueConfigVO>("/runner/sos/rescue-config", { eventGuid }, false);
+}
+
+export async function submitSosBeacon(body: { lat: number; lng: number; battery?: number }) {
+  return apiPost<void>("/runner/sos/beacon", body);
+}
+
 export async function resolveRunnerRouteLine(
   eventGuid: string,
   category?: string | null,
