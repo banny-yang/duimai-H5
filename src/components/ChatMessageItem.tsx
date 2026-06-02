@@ -1,6 +1,7 @@
 import { BibPickupCard } from "@/components/cards/BibPickupCard";
 import { SupplyStationCard } from "@/components/cards/SupplyStationCard";
 import { AiAvatar } from "@/components/AiAvatar";
+import { UserAvatar } from "@/components/UserAvatar";
 import { GreetingMessage } from "@/components/GreetingMessage";
 import { VoiceMessageBubble } from "@/components/VoiceMessageBubble";
 import { isVoiceTranscribedMessage, VoiceTranscribeTag } from "@/components/VoiceTranscribeTag";
@@ -35,8 +36,8 @@ export function ChatMessageItem({ message, runner, greeting }: Props) {
 
     if (showVoiceBubble || showTranscribedText) {
       return (
-        <div className="flex justify-end px-3 pr-14">
-          <div className="flex flex-col items-end gap-1.5 max-w-[85%]">
+        <div className="flex items-end justify-end gap-2 px-3 pl-12">
+          <div className="flex max-w-[78%] flex-col items-end gap-1.5">
             {showVoiceBubble && (
               <VoiceMessageBubble
                 audioUrl={message.audioUrl}
@@ -47,25 +48,27 @@ export function ChatMessageItem({ message, runner, greeting }: Props) {
               />
             )}
             {showTranscribedText && (
-              <div className="user-bubble rounded-2xl rounded-br-md px-3.5 py-2.5 text-[15px] text-white font-medium">
+              <div className="user-bubble rounded-2xl rounded-br-md px-3.5 py-2.5 text-[15px] font-medium text-white">
                 <VoiceTranscribeTag
                   inverted
                   durationMs={message.audioDurationMs}
                   className="mb-1.5 block"
                 />
-                <p className="leading-relaxed break-words">{message.text}</p>
+                <p className="break-words leading-relaxed">{message.text}</p>
               </div>
             )}
           </div>
+          <UserAvatar />
         </div>
       );
     }
     if (message.text) {
       return (
-        <div className="flex justify-end px-3 pr-14">
-          <div className="user-bubble max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[15px] text-white font-medium">
-            {message.text}
+        <div className="flex items-end justify-end gap-2 px-3 pl-12">
+          <div className="user-bubble max-w-[78%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[15px] font-medium text-white">
+            <p className="break-words leading-relaxed">{message.text}</p>
           </div>
+          <UserAvatar />
         </div>
       );
     }
@@ -73,11 +76,11 @@ export function ChatMessageItem({ message, runner, greeting }: Props) {
   }
 
   return (
-    <div className="flex justify-start px-3 pr-14">
-      <div className="max-w-[92%] space-y-2">
-        <div className="flex items-center gap-1.5 text-2xs text-secondary px-1">
+    <div className="flex justify-start px-3 pr-12">
+      <div className="max-w-[88%] space-y-1.5">
+        <div className="flex items-center gap-1.5 px-0.5 text-2xs font-medium text-secondary">
           {isStaff ? (
-            <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-[10px] font-bold">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-[10px] font-bold text-amber-800">
               人
             </span>
           ) : (
@@ -93,13 +96,13 @@ export function ChatMessageItem({ message, runner, greeting }: Props) {
           <div
             className={
               isStaff
-                ? "rounded-2xl rounded-bl-md px-3.5 py-2.5 text-[15px] text-ink font-medium border-2 border-amber-300 bg-amber-50"
-                : "ai-bubble rounded-2xl rounded-bl-md px-3.5 py-2.5 text-[15px] text-ink font-medium"
+                ? "rounded-2xl rounded-bl-sm border border-amber-200 bg-amber-50/90 px-3.5 py-2.5 text-[15px] font-medium text-ink shadow-sm"
+                : "ai-bubble rounded-2xl rounded-bl-md px-3.5 py-2.5 text-[15px] font-medium text-ink"
             }
           >
             <FormattedChatText text={message.streaming ? streamText : message.text} />
             {message.streaming && streamText.length < (message.text?.length ?? 0) && (
-              <span className="inline-block w-1.5 h-4 ml-0.5 bg-primary animate-pulse align-middle" />
+              <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-primary align-middle" />
             )}
           </div>
         )}

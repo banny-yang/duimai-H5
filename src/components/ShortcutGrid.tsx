@@ -1,4 +1,5 @@
 import { SHORTCUT_ICON_MAP } from "@/components/icons/ShortcutIcons";
+import { cn } from "@/lib/cn";
 
 const SHORTCUTS = [
   { id: "info" as const, label: "我的参赛信息", desc: "参赛号·分区·领物" },
@@ -6,14 +7,20 @@ const SHORTCUTS = [
   { id: "shuttle" as const, label: "交通接驳", desc: "物资·返程大巴" },
 ] as const;
 
+const ICON_STYLES: Record<(typeof SHORTCUTS)[number]["id"], string> = {
+  info: "bg-orange-100 text-orange-600",
+  map: "bg-blue-100 text-blue-600",
+  shuttle: "bg-emerald-100 text-emerald-600",
+};
+
 interface Props {
   onSelect: (id: string) => void;
 }
 
 export function ShortcutGrid({ onSelect }: Props) {
   return (
-    <div className="px-3 py-2.5 bg-secondary-bg/50">
-      <div className="grid grid-cols-3 gap-2">
+    <div className="bg-secondary-bg px-3 py-3">
+      <div className="grid grid-cols-3 gap-2.5">
         {SHORTCUTS.map((s) => {
           const Icon = SHORTCUT_ICON_MAP[s.id];
           return (
@@ -21,15 +28,20 @@ export function ShortcutGrid({ onSelect }: Props) {
               key={s.id}
               type="button"
               onClick={() => onSelect(s.id)}
-              className="flex flex-col items-center rounded-xl border border-secondary-border bg-white shadow-sm px-2 py-3 text-center min-h-[96px] transition-all duration-150 active:border-2 active:border-primary active:shadow-primary-sm active:translate-y-0.5 active:bg-primary-surface"
+              className="shortcut-card min-h-[100px] px-2 py-3"
             >
-              <span className="shortcut-icon-wrap w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-primary-dark">
-                <Icon className="w-6 h-6" />
+              <span
+                className={cn(
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                  ICON_STYLES[s.id],
+                )}
+              >
+                <Icon className="h-6 w-6" />
               </span>
-              <span className="mt-2 text-xs font-bold text-ink leading-snug line-clamp-2 w-full">
+              <span className="mt-2 line-clamp-2 w-full text-xs font-bold leading-snug text-ink">
                 {s.label}
               </span>
-              <span className="text-[10px] text-secondary mt-1 font-medium leading-tight line-clamp-2 w-full">
+              <span className="mt-1 line-clamp-2 w-full text-[10px] font-medium leading-tight text-secondary">
                 {s.desc}
               </span>
             </button>

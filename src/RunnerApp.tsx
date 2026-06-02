@@ -120,17 +120,29 @@ export default function RunnerApp({ eventGuid }: Props) {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-white">
-      <header className="shrink-0 z-30 border-b border-secondary-border bg-white px-3 py-2.5 flex items-center justify-between safe-top">
-        <div className="min-w-0 flex items-center gap-2">
+    <div className="relative flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-secondary-bg">
+      <header className="safe-top z-30 flex shrink-0 items-center justify-between border-b border-secondary-border bg-white px-3 py-2.5 shadow-sm">
+        <div className="flex min-w-0 items-center gap-2.5">
           {headerLogo ? (
-            <img src={headerLogo} alt="" className="h-8 w-8 rounded object-contain shrink-0" />
-          ) : null}
+            <img
+              src={headerLogo}
+              alt=""
+              className="h-9 w-9 shrink-0 rounded-full border border-secondary-border object-contain bg-white p-0.5"
+            />
+          ) : (
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+              style={{ background: "linear-gradient(145deg, #ef4444, var(--primary))" }}
+              aria-hidden
+            >
+              麦
+            </span>
+          )}
           <div className="min-w-0">
-            <p className="text-2xs text-secondary font-medium">
+            <p className="text-2xs font-medium text-secondary">
               {locale === "en" ? "Duimai Runner" : "对麦智能 · 选手助手"}
             </p>
-            <p className="text-sm font-bold text-ink truncate">{displayTitle}</p>
+            <p className="truncate text-sm font-bold text-ink">{displayTitle}</p>
           </div>
         </div>
         <div className="shrink-0 flex items-center gap-2">
@@ -222,12 +234,12 @@ export default function RunnerApp({ eventGuid }: Props) {
         </div>
       )}
 
-      <p className="shrink-0 text-center text-2xs text-secondary py-1 safe-bottom flex flex-col items-center gap-1">
+      <p className="safe-bottom flex shrink-0 flex-col items-center gap-1 border-t border-secondary-border bg-white py-2 text-center text-2xs text-secondary">
         {footerSupport ? (
-          <span className="text-primary-dark font-medium">{footerSupport}</span>
+          <span className="text-sm font-semibold text-red-600">{footerSupport}</span>
         ) : null}
-        {!branding?.hidePoweredBy && <span>{t(locale, "poweredBy")}</span>}
-        <span className="flex justify-center gap-3 text-primary-dark/80">
+        {!branding?.hidePoweredBy && <span className="text-secondary">{t(locale, "poweredBy")}</span>}
+        <span className="flex justify-center gap-3 text-secondary">
           <button type="button" className="underline" onClick={() => setLegal("privacy")}>
             {locale === "en" ? "Privacy" : "隐私政策"}
           </button>

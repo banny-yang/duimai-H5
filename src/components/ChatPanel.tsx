@@ -295,6 +295,9 @@ export function ChatPanel({
         await appendReply({ text: answer });
       } catch (e) {
         const msg = e instanceof ApiError ? e.message : "对话请求失败，请稍后重试";
+        if (/conversation not exists/i.test(msg)) {
+          conversationIdRef.current = undefined;
+        }
         setChatError(msg);
       } finally {
         setThinking(false);
@@ -394,21 +397,19 @@ export function ChatPanel({
     : (chatDisabledHint ?? "AI 不可用");
 
   return (
-    <section className="flex flex-col flex-1 min-h-0 border-t border-secondary-border bg-secondary-bg">
-      <div className="px-3 py-2 flex items-center justify-between bg-white border-b border-secondary-border">
+    <section className="chat-section">
+      <div className="flex items-center justify-between border-b border-secondary-border/80 bg-white px-3 py-2.5">
         <h2 className="text-sm font-bold text-ink">AI 赛事助手</h2>
-        <span
-          className={`text-2xs ${chatEnabled ? "text-primary" : "text-amber-600"}`}
-        >
+        <span className={`text-2xs font-semibold ${chatEnabled ? "text-primary" : "text-amber-600"}`}>
           {statusLabel}
         </span>
       </div>
 
-      <div className="relative flex-1 min-h-0">
+      <div className="relative min-h-0 flex-1 bg-[var(--chat-bg)]">
         <div
           ref={scrollContainerRef}
           onScroll={onMessagesScroll}
-          className="absolute inset-0 overflow-y-auto overscroll-y-contain"
+          className="chat-messages-canvas absolute inset-0 overflow-y-auto overscroll-y-contain"
         >
           <ChatSessionTime at={sessionAt} />
           <div className="space-y-3 py-2">
@@ -421,7 +422,7 @@ export function ChatPanel({
               />
             ))}
             {thinking && (
-              <div className="px-3 pr-14 text-sm text-secondary font-medium flex items-center gap-2">
+              <div className="flex items-center gap-2 px-3 pr-12 text-sm font-medium text-secondary">
                 <span className="inline-flex gap-1">
                   <span className="w-2 h-2 rounded-full bg-primary animate-bounce" />
                   <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:0.15s]" />
@@ -444,7 +445,7 @@ export function ChatPanel({
         />
       </div>
 
-      <div className="shrink-0 bg-white border-t border-secondary-border">
+      <div className="shrink-0 border-t border-secondary-border bg-white shadow-[0_-4px_12px_rgba(15,23,42,0.04)]">
         <SuggestedPrompts
           prompts={prompts}
           onSelect={sendTextMessage}

@@ -1,12 +1,12 @@
-/** 对麦头像 · 品牌青渐变球体 */
+/** 对麦 AI 头像 · 赛事红橙渐变 */
 export function AiAvatar({ size = "sm" }: { size?: "sm" | "md" }) {
-  const dim = size === "md" ? "w-6 h-6 text-xs" : "w-5 h-5 text-2xs";
+  const dim = size === "md" ? "h-7 w-7 text-xs" : "h-6 w-6 text-[10px]";
   return (
     <span
-      className={`${dim} shrink-0 rounded-full flex items-center justify-center font-bold text-white`}
+      className={`${dim} flex shrink-0 items-center justify-center rounded-full font-bold text-white`}
       style={{
-        background: "linear-gradient(145deg, var(--primary) 0%, var(--primary-deeper) 100%)",
-        boxShadow: "var(--shadow-primary-sm)",
+        background: "linear-gradient(145deg, #ef4444 0%, var(--primary) 100%)",
+        boxShadow: "0 2px 6px rgba(239, 68, 68, 0.35)",
       }}
       aria-hidden
     >

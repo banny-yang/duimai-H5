@@ -28,16 +28,17 @@ function EmergencyNoticeBar({ text, onClick }: { text: string; onClick?: () => v
       type="button"
       onClick={onClick}
       aria-label={`应急通知：${marqueeText}`}
-      className="emergency-notice-bar mx-3 mt-2 box-border flex w-[calc(100%-1.5rem)] max-w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-transform active:scale-[0.995]"
+      className="emergency-notice-bar mx-3 mt-2 box-border flex w-[calc(100%-1.5rem)] max-w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left transition-transform active:scale-[0.995]"
     >
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-rose-500 text-white shadow-sm">
-        <MegaphoneIcon className="h-3.5 w-3.5" />
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-500 text-white shadow-sm">
+        <MegaphoneIcon className="h-4 w-4" />
       </span>
       <div className="emergency-notice-marquee-mask">
         <NoticeMarquee
           text={marqueeText}
           alwaysScroll
           className="text-sm font-semibold tracking-tight text-slate-800"
+          edgeFadeClass="from-white"
         />
       </div>
     </button>
@@ -47,32 +48,33 @@ function EmergencyNoticeBar({ text, onClick }: { text: string; onClick?: () => v
 export function NotificationBar({ event, onClick }: Props) {
   const isEmergency = event.emergencyActive && !!event.emergencyNotice?.trim();
   const text = isEmergency ? event.emergencyNotice!.trim() : phaseNoticeText(event);
-  const hint =
-    event.actionHint ??
-    (event.phase === "pre"
-      ? "点击查看领物须知 ›"
-      : event.phase === "post"
-        ? "点击查看接驳与赛后服务 ›"
-        : "点击查看赛道与补给 ›");
+  const marqueeText = text.replace(/\s+/g, " ").trim();
 
   if (isEmergency) {
-    return (
-      <EmergencyNoticeBar text={text} onClick={() => onClick?.(event.phase)} />
-    );
+    return <EmergencyNoticeBar text={text} onClick={() => onClick?.(event.phase)} />;
+  }
+
+  if (!marqueeText) {
+    return null;
   }
 
   return (
     <button
       type="button"
       onClick={() => onClick?.(event.phase)}
-      className="notice-bar mx-3 mt-1.5 flex w-[calc(100%-1.5rem)] items-center gap-2.5 rounded-r-lg px-2.5 py-2.5 text-left transition-opacity active:opacity-90"
+      aria-label={`赛事公告：${marqueeText}`}
+      className="notice-bar flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-opacity active:opacity-90"
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-dark/70">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
         <MegaphoneIcon className="h-4 w-4" />
       </span>
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-xs font-semibold leading-snug text-ink">{text}</p>
-        <p className="mt-0.5 text-2xs font-medium text-primary-dark">{hint}</p>
+      <div className="emergency-notice-marquee-mask min-h-5 flex-1">
+        <NoticeMarquee
+          text={marqueeText}
+          alwaysScroll
+          className="text-xs font-semibold text-ink"
+          edgeFadeClass="from-[var(--primary-surface)]"
+        />
       </div>
     </button>
   );

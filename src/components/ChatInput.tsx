@@ -4,6 +4,26 @@ import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { clampVoiceDurationMs } from "@/lib/voice-message";
 import { cn } from "@/lib/cn";
 
+function MicIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path
+        d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z"
+        strokeLinecap="round"
+      />
+      <path d="M19 11a7 7 0 0 1-14 0M12 18v3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function SendIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M3.4 20.6 20.6 12 3.4 3.4l2.8 7.2L16 12l-9.8 1.4-2.8 7.2z" />
+    </svg>
+  );
+}
+
 export interface VoiceMessagePayload {
   blob: Blob;
   durationMs: number;
@@ -153,7 +173,7 @@ export function ChatInput({ onSendText, onVoiceMessage, disabled }: Props) {
         onCancel={isRecording ? cancelRecording : undefined}
       />
 
-      <div className="border-t border-secondary-border bg-white safe-bottom px-3 py-2.5 z-30 relative">
+      <div className="relative z-30 border-t border-secondary-border bg-white px-3 py-2.5 safe-bottom">
         {voiceError && (
           <p className="mb-2 text-2xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
             {voiceError}
@@ -215,23 +235,23 @@ export function ChatInput({ onSendText, onVoiceMessage, disabled }: Props) {
             </button>
           </div>
         ) : (
-          <div className="flex items-end gap-2">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               aria-label="切换到语音输入"
               disabled={disabled}
               className={cn(
-                "shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all",
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all",
                 disabled
-                  ? "bg-secondary-border text-secondary cursor-not-allowed"
-                  : "bg-primary/10 text-primary active:bg-primary active:text-white",
+                  ? "cursor-not-allowed text-secondary"
+                  : "text-secondary active:bg-secondary-border active:text-primary",
               )}
               onClick={() => {
                 setInputMode("voice");
                 setVoiceError(null);
               }}
             >
-              🎤
+              <MicIcon className="h-5 w-5" />
             </button>
             <input
               ref={inputRef}
@@ -243,9 +263,8 @@ export function ChatInput({ onSendText, onVoiceMessage, disabled }: Props) {
               placeholder="输入问题…"
               disabled={disabled}
               className={cn(
-                "flex-1 min-h-12 rounded-2xl border-2 px-4 text-[15px] text-ink font-medium transition-colors",
-                "focus:outline-none disabled:bg-secondary-bg",
-                focused || hasText ? "border-primary" : "border-secondary-border",
+                "chat-input-pill disabled:cursor-not-allowed disabled:bg-secondary-bg disabled:opacity-60",
+                !focused && !hasText && "border-secondary-border",
               )}
             />
             <button
@@ -253,12 +272,13 @@ export function ChatInput({ onSendText, onVoiceMessage, disabled }: Props) {
               onClick={submit}
               disabled={!canSend}
               className={cn(
-                "shrink-0 h-12 px-5 rounded-2xl text-sm font-bold transition-all duration-150",
+                "flex h-10 shrink-0 items-center gap-1 rounded-xl px-3.5 text-sm font-bold transition-all duration-150",
                 canSend
-                  ? "bg-primary text-white shadow-primary-sm active:bg-primary-dark active:scale-95"
-                  : "bg-secondary-border text-secondary cursor-not-allowed",
+                  ? "bg-primary text-white shadow-primary-sm active:scale-95 active:bg-primary-dark"
+                  : "cursor-not-allowed bg-secondary-border text-secondary",
               )}
             >
+              <SendIcon className="h-4 w-4" />
               发送
             </button>
           </div>

@@ -20,11 +20,11 @@ const PRESETS: Record<string, ThemePreset> = {
     primaryGlow: "#f5f9ff",
   },
   orange: {
-    primary: "#ea580c",
-    primaryDark: "#c2410c",
-    primaryDeeper: "#9a3412",
-    primaryMuted: "rgba(234, 88, 12, 0.14)",
-    primarySurface: "#fff7ed",
+    primary: "#ff6600",
+    primaryDark: "#ea580c",
+    primaryDeeper: "#c2410c",
+    primaryMuted: "rgba(255, 102, 0, 0.12)",
+    primarySurface: "#fff4eb",
     primaryGlow: "#fffaf5",
   },
   green: {
@@ -37,18 +37,11 @@ const PRESETS: Record<string, ThemePreset> = {
   },
 };
 
-const DEFAULT_PRESET: ThemePreset = {
-  primary: "#06b6d4",
-  primaryDark: "#0891b2",
-  primaryDeeper: "#0e7490",
-  primaryMuted: "rgba(6, 182, 212, 0.14)",
-  primarySurface: "#f0f9fa",
-  primaryGlow: "#f4fbfb",
-};
+const DEFAULT_PRESET: ThemePreset = PRESETS.orange;
 
 function hexToRgbChannels(hex: string): string {
   const h = hex.replace("#", "").trim();
-  if (h.length !== 6) return "6 182 212";
+  if (h.length !== 6) return "255 102 0";
   const n = Number.parseInt(h, 16);
   return `${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255}`;
 }

@@ -16,7 +16,7 @@ function parseInline(text: string, keyPrefix: string): ReactNode[] {
     const k = `${keyPrefix}-i${i++}`;
     if (token.startsWith("**")) {
       nodes.push(
-        <strong key={k} className="font-bold text-ink">
+        <strong key={k} className="font-bold text-primary-dark">
           {token.slice(2, -2)}
         </strong>,
       );

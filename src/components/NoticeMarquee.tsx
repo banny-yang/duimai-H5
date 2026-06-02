@@ -6,6 +6,8 @@ interface Props {
   className?: string;
   /** 应急等场景：始终跑马灯 */
   alwaysScroll?: boolean;
+  /** 左右渐隐遮罩起始色，需与公告条背景一致 */
+  edgeFadeClass?: string;
 }
 
 const PX_PER_SEC = 48;
@@ -15,7 +17,12 @@ const GAP_PX = 32;
 /**
  * 跑马灯（requestAnimationFrame），避免 CSS 动画在部分 WebView / 减少动效下不生效。
  */
-export function NoticeMarquee({ text, className, alwaysScroll = false }: Props) {
+export function NoticeMarquee({
+  text,
+  className,
+  alwaysScroll = false,
+  edgeFadeClass = "from-white",
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef(0);
@@ -93,16 +100,22 @@ export function NoticeMarquee({ text, className, alwaysScroll = false }: Props) 
   return (
     <div
       ref={containerRef}
-      className="notice-marquee-viewport relative h-5 w-full min-w-0 max-w-full overflow-hidden"
+      className="notice-marquee-viewport relative h-5 min-h-[1.25rem] w-full min-w-0 max-w-full overflow-hidden"
     >
       {!staticText && (
         <>
           <span
-            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-3 bg-gradient-to-r from-white to-transparent"
+            className={cn(
+              "pointer-events-none absolute inset-y-0 left-0 z-[1] w-4 bg-gradient-to-r to-transparent",
+              edgeFadeClass,
+            )}
             aria-hidden
           />
           <span
-            className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-3 bg-gradient-to-l from-white to-transparent"
+            className={cn(
+              "pointer-events-none absolute inset-y-0 right-0 z-[1] w-4 bg-gradient-to-l to-transparent",
+              edgeFadeClass,
+            )}
             aria-hidden
           />
         </>
