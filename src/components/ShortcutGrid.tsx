@@ -19,8 +19,8 @@ interface Props {
 
 export function ShortcutGrid({ onSelect }: Props) {
   return (
-    <div className="bg-secondary-bg px-3 py-3">
-      <div className="grid grid-cols-3 gap-2.5">
+    <div className="bg-secondary-bg px-3 py-2 pb-2.5">
+      <div className="grid grid-cols-3 gap-2">
         {SHORTCUTS.map((s) => {
           const Icon = SHORTCUT_ICON_MAP[s.id];
           return (
@@ -28,20 +28,20 @@ export function ShortcutGrid({ onSelect }: Props) {
               key={s.id}
               type="button"
               onClick={() => onSelect(s.id)}
-              className="shortcut-card min-h-[100px] px-2 py-3"
+              className="shortcut-card min-h-[92px] px-1.5 py-2.5"
             >
               <span
                 className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                  "shortcut-card-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
                   ICON_STYLES[s.id],
                 )}
               >
-                <Icon className="h-6 w-6" />
+                <Icon className="h-5 w-5" />
               </span>
-              <span className="mt-2 line-clamp-2 w-full text-xs font-bold leading-snug text-ink">
+              <span className="mt-1.5 line-clamp-2 w-full text-[11px] font-bold leading-snug text-ink">
                 {s.label}
               </span>
-              <span className="mt-1 line-clamp-2 w-full text-[10px] font-medium leading-tight text-secondary">
+              <span className="mt-0.5 line-clamp-1 w-full text-[10px] font-medium leading-tight text-secondary">
                 {s.desc}
               </span>
             </button>

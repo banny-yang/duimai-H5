@@ -20,7 +20,7 @@ export function ChatMessageItem({ message, runner, greeting }: Props) {
   const isStaff = message.role === "staff";
   const streamText = useTypewriter(message.text ?? "", !!message.streaming);
 
-  if (message.id === "greet" && runner) {
+  if (message.id === "greet") {
     return <GreetingMessage runner={runner} greeting={greeting} />;
   }
 
@@ -36,8 +36,8 @@ export function ChatMessageItem({ message, runner, greeting }: Props) {
 
     if (showVoiceBubble || showTranscribedText) {
       return (
-        <div className="flex items-end justify-end gap-2 px-3 pl-12">
-          <div className="flex max-w-[78%] flex-col items-end gap-1.5">
+        <div className="chat-row-user">
+          <div className="chat-row-user-bubbles">
             {showVoiceBubble && (
               <VoiceMessageBubble
                 audioUrl={message.audioUrl}
@@ -54,7 +54,7 @@ export function ChatMessageItem({ message, runner, greeting }: Props) {
                   durationMs={message.audioDurationMs}
                   className="mb-1.5 block"
                 />
-                <p className="break-words leading-relaxed">{message.text}</p>
+                <p className="break-words text-right leading-relaxed">{message.text}</p>
               </div>
             )}
           </div>
@@ -64,9 +64,9 @@ export function ChatMessageItem({ message, runner, greeting }: Props) {
     }
     if (message.text) {
       return (
-        <div className="flex items-end justify-end gap-2 px-3 pl-12">
-          <div className="user-bubble max-w-[78%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[15px] font-medium text-white">
-            <p className="break-words leading-relaxed">{message.text}</p>
+        <div className="chat-row-user">
+          <div className="user-bubble chat-row-user-bubble rounded-2xl rounded-br-md px-3.5 py-2.5 text-[15px] font-medium text-white">
+            <p className="break-words text-right leading-relaxed">{message.text}</p>
           </div>
           <UserAvatar />
         </div>
@@ -76,7 +76,7 @@ export function ChatMessageItem({ message, runner, greeting }: Props) {
   }
 
   return (
-    <div className="flex justify-start px-3 pr-12">
+    <div className="chat-row-assistant">
       <div className="max-w-[88%] space-y-1.5">
         <div className="flex items-center gap-1.5 px-0.5 text-2xs font-medium text-secondary">
           {isStaff ? (

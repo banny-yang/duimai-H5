@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { VoiceRecordOverlay } from "@/components/VoiceRecordOverlay";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { clampVoiceDurationMs } from "@/lib/voice-message";
+import { useVoiceInputSupported } from "@/hooks/useVoiceInputSupported";
+import { voiceUnsupportedHint } from "@/lib/voice-capability";
 import { cn } from "@/lib/cn";
 
 function MicIcon({ className }: { className?: string }) {
@@ -38,6 +40,7 @@ interface Props {
 type InputMode = "text" | "voice";
 
 export function ChatInput({ onSendText, onVoiceMessage, disabled }: Props) {
+  const voiceSupported = useVoiceInputSupported();
   const [text, setText] = useState("");
   const [focused, setFocused] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("text");
@@ -108,7 +111,7 @@ export function ChatInput({ onSendText, onVoiceMessage, disabled }: Props) {
           setVoiceError("请允许使用麦克风");
           voice.resetDenied();
         } else if (voice.phase === "unsupported") {
-          setVoiceError("当前浏览器不支持语音输入");
+          setVoiceError(voiceUnsupportedHint());
         }
       }
     },
@@ -173,7 +176,12 @@ export function ChatInput({ onSendText, onVoiceMessage, disabled }: Props) {
         onCancel={isRecording ? cancelRecording : undefined}
       />
 
-      <div className="relative z-30 border-t border-secondary-border bg-white px-3 py-2.5 safe-bottom">
+      <div className="relative z-20 border-t border-secondary-border bg-white px-3 py-2">
+        {!voiceSupported && !voiceMode && (
+          <p className="voice-input-hint mb-2 text-2xs text-secondary/90" role="note">
+            {voiceUnsupportedHint()}
+          </p>
+        )}
         {voiceError && (
           <p className="mb-2 text-2xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
             {voiceError}
@@ -236,23 +244,25 @@ export function ChatInput({ onSendText, onVoiceMessage, disabled }: Props) {
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="切换到语音输入"
-              disabled={disabled}
-              className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all",
-                disabled
-                  ? "cursor-not-allowed text-secondary"
-                  : "text-secondary active:bg-secondary-border active:text-primary",
-              )}
-              onClick={() => {
-                setInputMode("voice");
-                setVoiceError(null);
-              }}
-            >
-              <MicIcon className="h-5 w-5" />
-            </button>
+            {voiceSupported ? (
+              <button
+                type="button"
+                aria-label="切换到语音输入"
+                disabled={disabled}
+                className={cn(
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all",
+                  disabled
+                    ? "cursor-not-allowed text-secondary"
+                    : "text-secondary active:bg-secondary-border active:text-primary",
+                )}
+                onClick={() => {
+                  setInputMode("voice");
+                  setVoiceError(null);
+                }}
+              >
+                <MicIcon className="h-5 w-5" />
+              </button>
+            ) : null}
             <input
               ref={inputRef}
               value={text}

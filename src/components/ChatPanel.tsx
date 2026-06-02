@@ -405,11 +405,11 @@ export function ChatPanel({
         </span>
       </div>
 
-      <div className="relative min-h-0 flex-1 bg-[var(--chat-bg)]">
+      <div className="chat-messages-area bg-[var(--chat-bg)]">
         <div
           ref={scrollContainerRef}
           onScroll={onMessagesScroll}
-          className="chat-messages-canvas absolute inset-0 overflow-y-auto overscroll-y-contain"
+          className="chat-messages-canvas absolute inset-0 overflow-y-auto overscroll-y-contain px-3 pb-1"
         >
           <ChatSessionTime at={sessionAt} />
           <div className="space-y-3 py-2">
@@ -422,7 +422,7 @@ export function ChatPanel({
               />
             ))}
             {thinking && (
-              <div className="flex items-center gap-2 px-3 pr-12 text-sm font-medium text-secondary">
+              <div className="flex items-center gap-2 pr-16 text-sm font-medium text-secondary">
                 <span className="inline-flex gap-1">
                   <span className="w-2 h-2 rounded-full bg-primary animate-bounce" />
                   <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:0.15s]" />

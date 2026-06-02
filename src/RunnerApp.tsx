@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { ChatFooter } from "@/components/ChatFooter";
 import { ChatPanel } from "@/components/ChatPanel";
 import { IdentityVerifyBanner } from "@/components/identity/IdentityVerifyBanner";
 import { IdentityVerifySheet } from "@/components/identity/IdentityVerifySheet";
@@ -120,7 +121,7 @@ export default function RunnerApp({ eventGuid }: Props) {
   };
 
   return (
-    <div className="relative flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-secondary-bg">
+    <div className="runner-shell relative min-h-0 overflow-hidden bg-secondary-bg">
       <header className="safe-top z-30 flex shrink-0 items-center justify-between border-b border-secondary-border bg-white px-3 py-2.5 shadow-sm">
         <div className="flex min-w-0 items-center gap-2.5">
           {headerLogo ? (
@@ -159,27 +160,36 @@ export default function RunnerApp({ eventGuid }: Props) {
         </div>
       </header>
 
-      <div className="shrink-0 min-w-0 overflow-x-hidden">
-        {!identityVerified && <IdentityVerifyBanner onVerify={openVerify} />}
-        <NotificationBar event={event} onClick={handleNoticeClick} />
-        <ShortcutGrid onSelect={handleShortcut} />
-      </div>
+      <main className="runner-main min-w-0">
+        <div className="runner-hub">
+          {!identityVerified && <IdentityVerifyBanner onVerify={openVerify} />}
+          <NotificationBar event={event} onClick={handleNoticeClick} />
+          <ShortcutGrid onSelect={handleShortcut} />
+        </div>
 
-      <ChatPanel
-        phase={phase}
-        runner={runner}
-        greeting={greeting}
-        chatEnabled={chatEnabled}
-        chatDisabledHint={chatDisabledHint}
-        h5QuickQuestions={h5QuickQuestions}
-        inboxPollEnabled={apiConnected && identityVerified}
-        historyEnabled={apiConnected && identityVerified}
-      />
+        <ChatPanel
+          phase={phase}
+          runner={runner}
+          greeting={greeting}
+          chatEnabled={chatEnabled}
+          chatDisabledHint={chatDisabledHint}
+          h5QuickQuestions={h5QuickQuestions}
+          inboxPollEnabled={apiConnected && identityVerified}
+          historyEnabled={apiConnected && identityVerified}
+        />
+      </main>
 
       <SosFloatingButton
         disabled={!identityVerified}
         onTriggered={() => setSosOpen(true)}
         onDisabledTap={openVerify}
+      />
+
+      <ChatFooter
+        footerSupport={footerSupport}
+        hidePoweredBy={Boolean(branding?.hidePoweredBy)}
+        locale={locale}
+        onOpenLegal={setLegal}
       />
       <SosFlowModal
         open={sosOpen}
@@ -234,20 +244,6 @@ export default function RunnerApp({ eventGuid }: Props) {
         </div>
       )}
 
-      <p className="safe-bottom flex shrink-0 flex-col items-center gap-1 border-t border-secondary-border bg-white py-2 text-center text-2xs text-secondary">
-        {footerSupport ? (
-          <span className="text-sm font-semibold text-red-600">{footerSupport}</span>
-        ) : null}
-        {!branding?.hidePoweredBy && <span className="text-secondary">{t(locale, "poweredBy")}</span>}
-        <span className="flex justify-center gap-3 text-secondary">
-          <button type="button" className="underline" onClick={() => setLegal("privacy")}>
-            {locale === "en" ? "Privacy" : "隐私政策"}
-          </button>
-          <button type="button" className="underline" onClick={() => setLegal("terms")}>
-            {locale === "en" ? "Terms" : "用户协议"}
-          </button>
-        </span>
-      </p>
       <LegalSheet type={legal ?? "privacy"} open={legal !== null} onClose={() => setLegal(null)} />
     </div>
   );

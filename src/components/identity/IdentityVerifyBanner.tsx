@@ -7,7 +7,7 @@ export function IdentityVerifyBanner({ onVerify }: Props) {
     <button
       type="button"
       onClick={onVerify}
-      className="mx-3 mt-2 flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-left active:opacity-90"
+      className="mx-3 mt-1.5 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2 text-left active:opacity-90"
     >
       <span className="shrink-0 w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold">
         !

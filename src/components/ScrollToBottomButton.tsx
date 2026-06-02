@@ -15,7 +15,7 @@ export function ScrollToBottomButton({ visible, onClick, className }: Props) {
       onClick={onClick}
       aria-label="回到底部"
       className={cn(
-        "absolute z-10 left-4 bottom-4 w-10 h-10 rounded-full",
+        "absolute z-10 right-4 bottom-4 w-10 h-10 rounded-full",
         "bg-white border border-secondary-border shadow-md",
         "flex items-center justify-center text-primary",
         "active:scale-95 transition-transform",

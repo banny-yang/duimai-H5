@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isVoiceInputSupported } from "@/lib/voice-capability";
 import { VOICE_MAX_DURATION_MS, VOICE_MIN_RECORD_MS } from "@/lib/voice-message";
 
 export type VoiceRecorderPhase = "idle" | "recording" | "denied" | "unsupported";
@@ -48,11 +49,7 @@ export function useVoiceRecorder() {
   useEffect(() => () => forceIdle(), [forceIdle]);
 
   const start = useCallback(async () => {
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      setPhase("unsupported");
-      return false;
-    }
-    if (typeof MediaRecorder === "undefined") {
+    if (!isVoiceInputSupported()) {
       setPhase("unsupported");
       return false;
     }

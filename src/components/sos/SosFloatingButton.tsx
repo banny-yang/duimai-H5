@@ -44,10 +44,7 @@ export function SosFloatingButton({
   }, [onDisabledTap]);
 
   return (
-    <div
-      className="fixed z-40 right-3 flex flex-col items-center pointer-events-none"
-      style={{ bottom: "calc(11.5rem + env(safe-area-inset-bottom, 0px))" }}
-    >
+    <div className="sos-float-page pointer-events-none">
       {!disabled && progress > 0 && progress < 1 && (
         <span className="pointer-events-none mb-1 text-2xs text-alert font-bold whitespace-nowrap bg-white/95 px-2 py-0.5 rounded-full shadow-sm border border-secondary-border">
           继续按住 {Math.ceil((1 - progress) * 3)}s
@@ -76,8 +73,8 @@ export function SosFloatingButton({
           aria-disabled={disabled}
           className={
             disabled
-              ? "w-[3.75rem] h-[3.75rem] rounded-full bg-slate-200 text-slate-400 font-black text-sm flex items-center justify-center touch-none select-none ring-4 ring-white shadow-sm cursor-not-allowed"
-              : "sos-sphere w-[3.75rem] h-[3.75rem] rounded-full text-white font-black text-sm flex items-center justify-center touch-none select-none ring-4 ring-white"
+              ? "w-14 h-14 rounded-full bg-slate-200 text-slate-400 font-black text-xs flex items-center justify-center touch-none select-none ring-2 ring-white shadow-sm cursor-not-allowed"
+              : "sos-sphere w-14 h-14 rounded-full text-white font-black text-xs flex items-center justify-center touch-none select-none ring-2 ring-white"
           }
           onClick={disabled ? handleDisabledTap : undefined}
           onPointerDown={(e) => {

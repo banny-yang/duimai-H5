@@ -50,7 +50,11 @@
     overscroll-behavior: none;
   }
   #root {
-    @apply h-[100dvh] max-h-[100dvh] overflow-hidden max-w-md mx-auto;
+    @apply relative overflow-hidden max-w-md mx-auto;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
     background-color: var(--secondary-bg);
     box-shadow: 0 0 24px rgba(15, 23, 42, 0.08);
   }
@@ -111,14 +115,104 @@
     box-shadow: var(--shadow-primary-sm);
   }
 
-  .chat-section {
-    @apply flex flex-col flex-1 min-h-0 rounded-t-2xl overflow-hidden bg-white;
-    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.04);
+  /* 整页：顶栏 | 主区(金刚区+聊天) | 页脚 */
+  .runner-shell {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
   }
 
-  /* 消息列表滚动区：白底（与参考图一致） */
+  .runner-main {
+    @apply relative flex min-h-0 flex-col overflow-hidden;
+    gap: 2px;
+    background: var(--secondary-bg);
+  }
+
+  .runner-hub {
+    @apply shrink-0 z-[1];
+    max-height: min(36vh, 240px);
+    max-height: min(36dvh, 240px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chat-section {
+    @apply relative z-0 min-h-0 flex-1 overflow-hidden bg-white;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    border-top: 1px solid var(--secondary-border);
+    border-radius: 1rem 1rem 0 0;
+    box-shadow: 0 -2px 12px rgba(15, 23, 42, 0.05);
+  }
+
+  .chat-messages-area {
+    @apply relative min-h-0 overflow-hidden;
+  }
+
   .chat-messages-canvas {
     background: var(--chat-bg);
+  }
+
+  .runner-app-footer {
+    @apply shrink-0 z-[2] bg-white;
+  }
+
+  /* 用户消息：整行右对齐，头像贴右 */
+  .chat-row-user {
+    @apply flex w-full flex-row items-end justify-end gap-2;
+    padding: 0 0.75rem 0 2.5rem;
+  }
+
+  .chat-row-user-bubbles {
+    @apply flex max-w-[78%] flex-col items-end gap-1.5;
+  }
+
+  .chat-row-user-bubble {
+    @apply max-w-full;
+  }
+
+  .chat-row-assistant {
+    @apply flex w-full justify-start px-3;
+    padding-right: 4.5rem;
+  }
+
+  /* SOS：悬浮在 #root 右侧中部，不随聊天滚动、不挡气泡 */
+  .sos-float-page {
+    position: absolute;
+    z-index: 45;
+    right: max(0.65rem, env(safe-area-inset-right, 0px));
+    top: 56%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  @media (max-height: 720px) {
+    .runner-hub {
+      max-height: min(32vh, 200px);
+      max-height: min(32dvh, 200px);
+    }
+
+    .shortcut-card {
+      min-height: 4.5rem !important;
+      padding-top: 0.5rem !important;
+      padding-bottom: 0.5rem !important;
+    }
+
+    .shortcut-card-icon {
+      height: 2rem !important;
+      width: 2rem !important;
+    }
+
+    .voice-input-hint {
+      display: none;
+    }
   }
 
   .session-time-pill {
