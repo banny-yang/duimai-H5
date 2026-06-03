@@ -1,5 +1,5 @@
 <template>
-  <view class="h5-root h5-root--runner" :style="rootLayoutStyle">
+  <view class="h5-root h5-root--runner" :style="mpRootStyle">
     <view v-if="loading" class="loading-screen">
       <text>{{ t(locale, 'loadingEvent') }}</text>
     </view>
@@ -11,7 +11,7 @@
       @retry="reload"
     />
 
-    <view v-else class="runner-shell" :style="themeStyle">
+    <view v-else class="runner-shell" :class="{ 'runner-shell--chat-maximized': isMp && chatMaximized }" :style="themeStyle">
       <view class="runner-header">
         <view class="header-left">
           <image v-if="headerLogo" class="logo-img" :src="headerLogo" mode="aspectFit" />
@@ -29,32 +29,71 @@
         </view>
       </view>
 
-      <!-- 顶栏 | 主区(卡片区+聊天) | 底栏：与 React H5 相同 grid 流式布局 -->
-      <view class="runner-main" :class="{ 'runner-main--chat-maximized': chatMaximized }">
+      <!-- 小程序：信息(flex:1) | 聊天(贴协议栏) | 协议栏 — 文档流，无 absolute -->
+      <template v-if="isMp">
+        <view class="runner-body">
+          <view class="runner-info-scroll">
+            <RunnerTopSection
+              :event="eventWithPhase"
+              :identity-verified="identityVerified"
+              @verify="verifyOpen = true"
+              @shortcut="onShortcut"
+            />
+          </view>
+        </view>
+        <view
+          class="runner-chat-dock"
+          :class="{ 'runner-chat-dock--maximized': chatMaximized }"
+        >
+          <ChatPanel
+            ref="chatPanelRef"
+            :phase="phase"
+            :runner="runner"
+            :greeting="greeting"
+            :chat-enabled="chatEnabled"
+            :chat-disabled-hint="chatDisabledHint"
+            :offline-hint="offlineMode ? t(locale, 'offlineHint') : undefined"
+            :h5-quick-questions="h5QuickQuestions"
+            :inbox-poll-enabled="apiConnected && identityVerified"
+            :history-enabled="apiConnected && identityVerified"
+            :runner-id="runner.id"
+            :maximized="chatMaximized"
+            :messages-scroll-px="messagesScrollPx"
+            :locale="locale"
+            @toggle-maximize="chatMaximized = !chatMaximized"
+          />
+        </view>
+      </template>
+
+      <view
+        v-else
+        class="runner-main"
+        :class="{ 'runner-main--chat-maximized': chatMaximized }"
+      >
         <RunnerTopSection
-          v-show="!isMp || !chatMaximized"
           :event="eventWithPhase"
           :identity-verified="identityVerified"
           @verify="verifyOpen = true"
           @shortcut="onShortcut"
         />
-        <ChatPanel
-          ref="chatPanelRef"
-          :section-style="mpChatSectionStyle"
-          :phase="phase"
-          :runner="runner"
-          :greeting="greeting"
-          :chat-enabled="chatEnabled"
-          :chat-disabled-hint="chatDisabledHint"
-          :offline-hint="offlineMode ? t(locale, 'offlineHint') : undefined"
-          :h5-quick-questions="h5QuickQuestions"
-          :inbox-poll-enabled="apiConnected && identityVerified"
-          :history-enabled="apiConnected && identityVerified"
-          :runner-id="runner.id"
-          :maximized="chatMaximized"
-          :locale="locale"
-          @toggle-maximize="chatMaximized = !chatMaximized"
-        />
+        <view class="runner-chat-slot">
+          <ChatPanel
+            ref="chatPanelRef"
+            :phase="phase"
+            :runner="runner"
+            :greeting="greeting"
+            :chat-enabled="chatEnabled"
+            :chat-disabled-hint="chatDisabledHint"
+            :offline-hint="offlineMode ? t(locale, 'offlineHint') : undefined"
+            :h5-quick-questions="h5QuickQuestions"
+            :inbox-poll-enabled="apiConnected && identityVerified"
+            :history-enabled="apiConnected && identityVerified"
+            :runner-id="runner.id"
+            :maximized="chatMaximized"
+            :locale="locale"
+            @toggle-maximize="chatMaximized = !chatMaximized"
+          />
+        </view>
       </view>
 
       <SosFloatingButton
@@ -120,7 +159,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick, getCurrentInstance } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, getCurrentInstance } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import PhaseBadge from '@/components/runner/PhaseBadge.vue'
 import ChatPanel from '@/components/runner/ChatPanel.vue'
@@ -136,32 +175,19 @@ import RouteMapSheet from '@/components/runner/RouteMapSheet.vue'
 import ShuttleSheet from '@/components/runner/ShuttleSheet.vue'
 import LegalSheet from '@/components/runner/LegalSheet.vue'
 import { useRunnerContext } from '@/composables/useRunnerContext.js'
+import { useMpRunnerLayout } from '@/composables/useMpRunnerLayout.js'
 import { isEventPublicGuid } from '@/utils/runner-api.js'
 import { readPhaseOverride } from '@/utils/event-phase.js'
 import { applyH5BrandTheme, brandThemeStyle } from '@/utils/h5-brand-theme.js'
 import { t } from '@/utils/i18n.js'
-import {
-  getMpPageLayoutStyle,
-  bindMpWindowResize,
-  isMpWeixinPlatform,
-  measureMpChatSectionFull,
-} from '@/utils/mp-layout.js'
+import { isMpWeixinPlatform } from '@/utils/mp-layout.js'
 
 const isMp = isMpWeixinPlatform()
 const eventGuidParam = ref('')
 const phaseOverride = ref(undefined)
 const langQuery = ref(undefined)
-const rootLayoutStyle = ref({})
-let unbindMpResize = () => {}
-
-function applyMpPageHeight() {
-  if (!isMpWeixinPlatform()) return
-  const style = getMpPageLayoutStyle()
-  if (Object.keys(style).length) rootLayoutStyle.value = style
-}
 
 onLoad((query) => {
-  applyMpPageHeight()
   const g = query?.eventGuid?.trim() || ''
   if (!g || !isEventPublicGuid(g)) {
     uni.showToast({ title: '无效的赛事链接', icon: 'none' })
@@ -201,33 +227,17 @@ const pickupOpen = ref(false)
 const legal = ref(null)
 const chatMaximized = ref(false)
 const chatPanelRef = ref(null)
-const mpChatSectionStyle = ref({})
-const pageProxy = getCurrentInstance()
+const pageInstance = getCurrentInstance()
 
-function remeasureChatPanel() {
-  if (!isMp) return
-  nextTick(() => {
-    chatPanelRef.value?.remeasure?.()
-    setTimeout(() => chatPanelRef.value?.remeasure?.(), 120)
-    setTimeout(() => chatPanelRef.value?.remeasure?.(), 400)
-  })
-}
+const {
+  rootLayoutStyle: mpLayoutStyle,
+  messagesScrollPx,
+  scheduleMeasure: scheduleMpMeasure,
+  mount: mountMpLayout,
+  unmount: unmountMpLayout,
+} = useMpRunnerLayout(chatMaximized, pageInstance)
 
-function refreshMpLayout() {
-  if (!isMp) return
-  applyMpPageHeight()
-  nextTick(() => {
-    if (chatMaximized.value) {
-      measureMpChatSectionFull({ instance: pageProxy?.proxy }, ({ sectionStyle }) => {
-        mpChatSectionStyle.value = sectionStyle
-        remeasureChatPanel()
-      })
-    } else {
-      mpChatSectionStyle.value = {}
-      remeasureChatPanel()
-    }
-  })
-}
+const mpRootStyle = computed(() => (isMp ? mpLayoutStyle.value : {}))
 
 const brandPreset = ref(applyH5BrandTheme(null))
 watch(branding, (b) => {
@@ -251,41 +261,25 @@ const chatDisabledHint = computed(() => {
 const eventWithPhase = computed(() => ({ ...event.value, phase: phase.value }))
 
 onMounted(async () => {
-  applyMpPageHeight()
-  if (isMp) {
-    unbindMpResize = bindMpWindowResize(() => refreshMpLayout())
-    setTimeout(refreshMpLayout, 120)
-    setTimeout(refreshMpLayout, 480)
-  }
+  if (isMp) mountMpLayout()
   if (!eventGuidParam.value) return
   await load()
-  refreshMpLayout()
+  if (isMp) scheduleMpMeasure(100)
   if (apiConnected.value) startNoticePoll()
 })
 
 onUnmounted(() => {
-  unbindMpResize()
-})
-
-watch(chatMaximized, () => {
-  nextTick(() => {
-    refreshMpLayout()
-    setTimeout(refreshMpLayout, 80)
-    setTimeout(refreshMpLayout, 320)
-  })
+  if (isMp) unmountMpLayout()
 })
 
 watch(loading, (isLoading) => {
-  if (!isLoading && isMp) {
-    setTimeout(refreshMpLayout, 100)
-    setTimeout(refreshMpLayout, 400)
-  }
+  if (!isLoading && isMp) scheduleMpMeasure(150)
 })
 
 watch(
   () => identityVerified.value,
   () => {
-    if (isMp) setTimeout(refreshMpLayout, 200)
+    if (isMp) scheduleMpMeasure(200)
   },
 )
 

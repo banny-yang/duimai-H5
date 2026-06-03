@@ -91,4 +91,16 @@ function onTap() {
 .sos-ring {
   border-radius: 50%;
 }
+
+/* #ifdef MP-WEIXIN */
+:deep(.sos-float-wrap),
+.sos-float-wrap {
+  position: fixed;
+  right: 20rpx;
+  bottom: var(--mp-sos-bottom, calc(120rpx + env(safe-area-inset-bottom)));
+  top: auto !important;
+  transform: none !important;
+  z-index: 100;
+}
+/* #endif */
 </style>

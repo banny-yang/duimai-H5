@@ -5,7 +5,6 @@
       'chat-section--maximized': maximized,
       'chat-section--mp': useMpScrollFill,
     }"
-    :style="sectionStyle"
   >
     <view class="chat-section-header">
       <view class="chat-header-title-wrap">
@@ -83,7 +82,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, getCurrentInstance, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import ChatInput from './ChatInput.vue'
 import ChatMessageItem from './ChatMessageItem.vue'
 import ChatMaximizeIcon from '@/components/icons/ChatMaximizeIcon.vue'
@@ -119,8 +118,8 @@ const props = defineProps({
   maximized: Boolean,
   showMaximize: { type: Boolean, default: true },
   locale: { type: String, default: 'zh' },
-  /** 小程序 scroll-view 需 px 高度时由父级传入（可选） */
-  sectionStyle: { type: Object, default: () => ({}) },
+  /** 小程序 scroll-view 高度(px)，由 useMpRunnerLayout 测算 */
+  messagesScrollPx: { type: Number, default: 0 },
 })
 defineEmits(['toggle-maximize'])
 
@@ -140,55 +139,12 @@ let unsubOpen = null
 let unsubState = null
 const nearBottom = ref(true)
 
-/** 微信 scroll-view 高度（消息区实测，配合绝对定位布局） */
-const messagesScrollPx = ref(0)
 const useMpScrollFill = isMpWeixinPlatform()
-let measureTimer = null
-
-function measureMessagesScrollHeight() {
-  if (!useMpScrollFill) return
-  nextTick(() => {
-    const query = uni.createSelectorQuery()
-    const inst = getCurrentInstance()
-    if (inst?.proxy) query.in(inst.proxy)
-    query.select('.chat-section').boundingClientRect()
-    query.select('.chat-section-header').boundingClientRect()
-    query.select('.chat-input-footer').boundingClientRect()
-    query.select('.chat-messages-area').boundingClientRect()
-    query.exec((res) => {
-      const section = res?.[0]
-      const header = res?.[1]
-      const input = res?.[2]
-      const area = res?.[3]
-      if (section?.height > 0) {
-        const h =
-          section.height -
-          (Number(header?.height) || 0) -
-          (Number(input?.height) || 0)
-        if (h > 48) {
-          messagesScrollPx.value = Math.floor(h)
-          return
-        }
-      }
-      if (area?.height > 48) {
-        messagesScrollPx.value = Math.floor(area.height)
-      }
-    })
-  })
-}
-
-function scheduleMeasureMessages() {
-  if (!useMpScrollFill) return
-  if (measureTimer) clearTimeout(measureTimer)
-  measureTimer = setTimeout(measureMessagesScrollHeight, 80)
-  setTimeout(measureMessagesScrollHeight, 280)
-  setTimeout(measureMessagesScrollHeight, 600)
-}
 
 const messagesScrollStyle = computed(() => {
-  if (useMpScrollFill && messagesScrollPx.value > 0) {
+  if (useMpScrollFill && props.messagesScrollPx > 0) {
     return {
-      height: `${messagesScrollPx.value}px`,
+      height: `${props.messagesScrollPx}px`,
       width: '100%',
       boxSizing: 'border-box',
     }
@@ -197,12 +153,13 @@ const messagesScrollStyle = computed(() => {
 })
 
 watch(
-  () => [props.sectionStyle, props.maximized],
-  () => scheduleMeasureMessages(),
-  { deep: true },
+  () => props.messagesScrollPx,
+  () => {
+    if (nearBottom.value) scrollBottom()
+  },
 )
 
-defineExpose({ remeasure: scheduleMeasureMessages })
+defineExpose({ remeasure: () => {} })
 
 const prompts = computed(() =>
   resolveQuickPrompts(props.phase, props.h5QuickQuestions),
@@ -448,32 +405,11 @@ watch(
   },
 )
 
-watch(
-  () => prompts.value.length,
-  () => scheduleMeasureMessages(),
-)
-
 onMounted(() => {
   loadHistory()
-  scheduleMeasureMessages()
-  setTimeout(scheduleMeasureMessages, 400)
 })
 
-watch(
-  () => props.maximized,
-  () => {
-    scheduleMeasureMessages()
-    setTimeout(scheduleMeasureMessages, 320)
-  },
-)
-
-watch(
-  () => messages.value.length,
-  () => scheduleMeasureMessages(),
-)
-
 onUnmounted(() => {
-  if (measureTimer) clearTimeout(measureTimer)
   teardownInbox()
 })
 </script>
@@ -490,5 +426,9 @@ onUnmounted(() => {
   gap: 12rpx;
   flex-shrink: 0;
   margin-left: auto;
+  min-width: 88rpx;
+}
+.chat-max-btn {
+  flex-shrink: 0;
 }
 </style>

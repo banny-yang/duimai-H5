@@ -1,0 +1,178 @@
+@import './h5-tokens.scss';
+
+/* 小程序 runner：flex 文档流 + JS px 变量；聊天区为协议栏正上方兄弟节点 */
+/* #ifdef MP-WEIXIN */
+.h5-root--runner {
+  max-width: none;
+  margin: 0;
+  box-shadow: none;
+  overflow: hidden;
+  height: 100%;
+  box-sizing: border-box;
+  --z-info: 1;
+  --z-surface: 2;
+  --z-sos: 100;
+}
+
+.runner-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0 !important;
+  max-height: 100%;
+  overflow: hidden;
+  position: relative;
+  background: var(--secondary-bg);
+}
+
+.runner-header {
+  flex-shrink: 0;
+}
+
+/* 信息区：占据顶栏与聊天之间的全部剩余高度 */
+.runner-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  z-index: var(--z-info);
+}
+
+.runner-info-scroll {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+
+.runner-info-scroll .runner-top-section {
+  max-height: none;
+}
+
+.runner-info-scroll .runner-hub {
+  max-height: none;
+  overflow-y: visible;
+}
+
+/* 聊天区：普通态随内容高度，紧挨协议栏；全屏态 overlay 盖住信息区 */
+.runner-chat-dock {
+  flex: 0 0 auto;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+  z-index: var(--z-surface);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+/* 全屏：overlay 盖住信息区，仍不遮挡协议栏 */
+.runner-shell--chat-maximized .runner-chat-dock {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--mp-header-h, 0);
+  bottom: var(--mp-footer-h, 0);
+  height: auto;
+  flex: none;
+  z-index: var(--z-surface);
+}
+
+.runner-shell--chat-maximized .runner-body {
+  pointer-events: none;
+}
+
+.runner-chat-dock .chat-section--mp {
+  flex: 0 0 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  border-top: 1px solid var(--secondary-border);
+  border-radius: 32rpx 32rpx 0 0;
+  box-shadow: 0 -4rpx 24rpx rgba(15, 23, 42, 0.05);
+}
+
+.runner-shell--chat-maximized .runner-chat-dock .chat-section--mp {
+  flex: 1 1 auto;
+  height: 100%;
+}
+
+.runner-chat-dock--maximized .chat-section--mp,
+.runner-shell--chat-maximized .chat-section--mp {
+  border-radius: 0;
+  box-shadow: none;
+  border-top-color: transparent;
+}
+
+.runner-chat-dock .chat-section-header {
+  flex-shrink: 0;
+  min-height: 88rpx;
+}
+
+.runner-chat-dock .chat-messages-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.runner-chat-dock .chat-input-footer {
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.runner-footer {
+  flex-shrink: 0;
+  z-index: var(--z-surface);
+  background: #fff;
+}
+
+.sos-float-wrap {
+  position: fixed;
+  right: 20rpx;
+  bottom: var(--mp-sos-bottom, calc(120rpx + env(safe-area-inset-bottom)));
+  top: auto !important;
+  transform: none !important;
+  z-index: var(--z-sos);
+}
+
+.chat-max-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0 !important;
+  width: auto !important;
+  min-width: 88rpx !important;
+  min-height: 56rpx !important;
+  height: 56rpx !important;
+  padding: 0 16rpx !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.chat-max-btn-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--secondary-text);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.picker-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.picker-list {
+  flex: 1;
+  min-height: 360rpx;
+  height: 0;
+  box-sizing: border-box;
+}
+/* #endif */

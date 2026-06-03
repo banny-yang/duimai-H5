@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Select-String -Pattern \"chat-section--mp|runner-main\" -Context 3)",
+      "Bash(git checkout *)",
+      "Bash(Get-ChildItem -Recurse -Name \"E:\\\\duimai-AI\\\\duimai-h5\\\\uni-app\\\\dist\\\\build\\\\mp-weixin\")",
+      "Bash(Select-Object -First 60)",
+      "PowerShell(Select-String -Path \"E:\\\\duimai-AI\\\\duimai-h5\\\\uni-app\\\\dist\\\\build\\\\mp-weixin\\\\app.wxss\" -Pattern \"runner-shell|runner-main|chat-section--mp\" | ForEach-Object { $_.Line })",
+      "Bash(Get-ChildItem \"E:\\\\duimai-AI\\\\duimai-h5\\\\uni-app\\\\src\\\\utils\\\\mp-layout.js\",\"E:\\\\duimai-AI\\\\duimai-h5\\\\uni-app\\\\src\\\\pages\\\\runner\\\\runner.vue\",\"E:\\\\duimai-AI\\\\duimai-h5\\\\uni-app\\\\src\\\\styles\\\\h5-runner.scss\",\"E:\\\\duimai-AI\\\\duimai-h5\\\\uni-app\\\\dist\\\\build\\\\mp-weixin\\\\utils\\\\mp-layout.js\",\"E:\\\\duimai-AI\\\\duimai-h5\\\\uni-app\\\\dist\\\\build\\\\mp-weixin\\\\pages\\\\runner\\\\runner.js\",\"E:\\\\duimai-AI\\\\duimai-h5\\\\uni-app\\\\dist\\\\build\\\\mp-weixin\\\\app.wxss\")",
+      "Bash(Select-Object Name, LastWriteTime)",
+      "Bash(Format-Table -AutoSize)",
+      "PowerShell(git *)",
+      "Bash(node *)",
+      "Bash(Get-Content \"E:\\\\duimai-AI\\\\duimai-h5\\\\uni-app\\\\package.json\")",
+      "Bash(Select-Object -First 30)",
+      "PowerShell($css = Get-Content \"E:\\\\duimai-AI\\\\duimai-h5\\\\uni-app\\\\dist\\\\build\\\\mp-weixin\\\\app.wxss\" -Raw; $pageMatches = [regex]::Matches\\($css, 'page\\\\{[^}]+\\\\}'\\); foreach \\($m in $pageMatches\\) { Write-Host \"--- page rule ---\"; Write-Host $m.Value; Write-Host \"\" })",
+      "PowerShell($css = Get-Content \"E:\\\\duimai-AI\\\\duimai-h5\\\\uni-app\\\\dist\\\\build\\\\mp-weixin\\\\app.wxss\" -Raw; $matches = [regex]::Matches\\($css, '\\\\.h5-root--runner\\\\{[^}]+\\\\}'\\); foreach \\($m in $matches\\) { Write-Host $m.Value })"
+    ]
+  }
+}

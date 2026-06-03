@@ -1,107 +1,5 @@
 @import './h5-tokens.scss';
-
-/* 小程序：runner 页整屏布局；index 等页面勿锁死 page 高度 */
-/* #ifdef MP-WEIXIN */
-.h5-root--runner {
-  max-width: none;
-  margin: 0;
-  box-shadow: none;
-  overflow: hidden;
-}
-
-.runner-main {
-  position: relative;
-  min-height: 0;
-  overflow: hidden;
-  flex: unset;
-  display: flex;
-  flex-direction: column;
-}
-
-.runner-top-section {
-  flex-shrink: 0;
-  max-height: 32vh;
-  overflow: hidden;
-}
-
-.runner-hub {
-  max-height: 28vh;
-  overflow-y: auto;
-}
-
-/* 普通模式：flex 流式，聊天区自然接在卡片区下方 */
-.chat-section--mp {
-  flex: 1 1 0%;
-  min-height: 0;
-  height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: #fff;
-  border-top: 1px solid var(--secondary-border);
-  border-radius: 32rpx 32rpx 0 0;
-  box-shadow: 0 -4rpx 24rpx rgba(15, 23, 42, 0.05);
-}
-
-.chat-section--mp.chat-section--maximized {
-  border-radius: 0;
-  box-shadow: none;
-  border-top-color: transparent;
-}
-
-.chat-section--mp .chat-section-header {
-  flex-shrink: 0;
-}
-
-.chat-section--mp .chat-messages-area {
-  flex: 1 1 0%;
-  min-height: 0;
-  height: 0;
-  overflow: hidden;
-}
-
-.chat-section--mp .chat-input-footer {
-  flex-shrink: 0;
-  background: #fff;
-}
-
-.sos-float-wrap {
-  position: fixed;
-  right: 20rpx;
-  bottom: calc(128rpx + env(safe-area-inset-bottom));
-  top: auto !important;
-  transform: none !important;
-  z-index: 40;
-}
-
-.picker-page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #fff;
-}
-
-.picker-list {
-  flex: 1;
-  min-height: 360rpx;
-  height: 0;
-  box-sizing: border-box;
-}
-
-.chat-max-btn {
-  width: auto !important;
-  min-width: 72rpx !important;
-  padding: 0 16rpx !important;
-}
-
-.chat-max-btn-text {
-  font-size: 24rpx;
-  font-weight: 600;
-  color: var(--secondary-text);
-  line-height: 1;
-  white-space: nowrap;
-}
-/* #endif */
+@import './h5-runner-mp.scss';
 
 /* H5 壳：与 #root max-w-md 一致 */
 .h5-root {
@@ -126,15 +24,6 @@
   background: var(--secondary-bg);
 }
 
-/* #ifdef MP-WEIXIN */
-.runner-shell {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  height: 100%;
-  min-height: 0;
-  max-height: none;
-}
-/* #endif */
 
 .runner-header {
   flex-shrink: 0;
@@ -158,12 +47,12 @@
   background: var(--secondary-bg);
 }
 
-/* #ifdef MP-WEIXIN */
-.runner-main {
-  flex: unset;
-  height: 100%;
+.runner-chat-slot {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
-/* #endif */
 
 .runner-top-section {
   flex-shrink: 0;
@@ -543,10 +432,15 @@
 
 .chat-section--maximized .chat-input-footer {
   flex-shrink: 0;
-  padding-bottom: env(safe-area-inset-bottom);
   background: #fff;
   z-index: 4;
 }
+
+/* #ifndef MP-WEIXIN */
+.chat-section--maximized .chat-input-footer {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+/* #endif */
 
 .chat-scroll-fab {
   position: absolute;
@@ -926,6 +820,7 @@
   box-shadow: 0 20rpx 56rpx rgba(211, 47, 47, 0.42);
 }
 
+/* #ifndef MP-WEIXIN */
 .sos-float-wrap {
   position: absolute;
   right: 24rpx;
@@ -936,6 +831,7 @@
   flex-direction: column;
   align-items: center;
 }
+/* #endif */
 
 .sos-float-hint {
   font-size: 20rpx;
