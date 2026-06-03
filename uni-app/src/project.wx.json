@@ -1,0 +1,14 @@
+{
+  "description": "微信开发者工具项目配置（编译时复制为 project.config.json）",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "postcss": false,
+    "minified": false,
+    "newFeature": true,
+    "bigPackageSizeSupport": true
+  },
+  "compileType": "miniprogram",
+  "libVersion": "3.14.6",
+  "projectname": "对麦选手助手"
+}

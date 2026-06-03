@@ -72,6 +72,19 @@ http://localhost:5180/57c01d8b-55a3-11f1-b8af-562bf5f97a91
 
 生产环境可设置 `VITE_API_BASE_URL=https://your-host/api`。
 
+## Uni-App（多端 · 功能对齐）
+
+React H5 已 **完整迁移** 至 `uni-app/`（Vue 3 + Uni-App），含聊天 WebSocket、离线包、赛道地图、SOS 全流程、接驳/领物弹窗等；支持 H5、微信小程序、App 独立构建。
+
+```bash
+cd duimai-h5/uni-app
+npm install
+npm run dev              # H5，默认 http://localhost:5181
+npm run dev:mp-weixin    # 微信小程序
+```
+
+详见 [uni-app/README.md](./uni-app/README.md)。
+
 ## 构建
 
 ```bash
