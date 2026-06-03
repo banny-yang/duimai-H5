@@ -28,6 +28,53 @@ interface Props {
   inboxPollEnabled?: boolean;
   /** 已绑定身份时加载服务端聊天记录 */
   historyEnabled?: boolean;
+  /** 聊天区是否占满主内容区（隐藏上方金刚区） */
+  maximized?: boolean;
+  onToggleMaximize?: () => void;
+}
+
+/** 最大化：对角外扩箭头 */
+function IconChatMaximize({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** 恢复：向下箭头（收起聊天、露出上方功能区） */
+function IconChatRestoreDown({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="M12 5v10M8 11l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M6 19h12" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ChatMaximizeButton({
+  maximized,
+  onToggle,
+}: {
+  maximized: boolean;
+  onToggle: () => void;
+}) {
+  const label = maximized ? "恢复聊天窗口大小" : "最大化聊天窗口";
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={label}
+      title={label}
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-secondary-border bg-white text-secondary transition-colors active:bg-primary-surface active:text-primary"
+    >
+      {maximized ? (
+        <IconChatRestoreDown className="h-4 w-4" />
+      ) : (
+        <IconChatMaximize className="h-4 w-4" />
+      )}
+    </button>
+  );
 }
 
 /** WebSocket 未连通时快速拉取 Redis 收件箱 */
@@ -74,6 +121,8 @@ export function ChatPanel({
   h5QuickQuestions,
   inboxPollEnabled = false,
   historyEnabled = false,
+  maximized = false,
+  onToggleMaximize,
 }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { id: "greet", role: "assistant", text: "", createdAt: initialSessionTime().getTime() },
@@ -397,12 +446,19 @@ export function ChatPanel({
     : (chatDisabledHint ?? "AI 不可用");
 
   return (
-    <section className="chat-section">
-      <div className="flex items-center justify-between border-b border-secondary-border/80 bg-white px-3 py-2.5">
-        <h2 className="text-sm font-bold text-ink">AI 赛事助手</h2>
-        <span className={`text-2xs font-semibold ${chatEnabled ? "text-primary" : "text-amber-600"}`}>
-          {statusLabel}
-        </span>
+    <section className={`chat-section${maximized ? " chat-section--maximized" : ""}`}>
+      <div className="chat-section-header flex items-center justify-between gap-2 border-b border-secondary-border/80 bg-white px-3 py-2.5">
+        <h2 className="min-w-0 truncate text-sm font-bold text-ink">AI 赛事助手</h2>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <span
+            className={`max-w-[7rem] truncate text-2xs font-semibold ${chatEnabled ? "text-primary" : "text-amber-600"}`}
+          >
+            {statusLabel}
+          </span>
+          {onToggleMaximize && (
+            <ChatMaximizeButton maximized={maximized} onToggle={onToggleMaximize} />
+          )}
+        </div>
       </div>
 
       <div className="chat-messages-area bg-[var(--chat-bg)]">

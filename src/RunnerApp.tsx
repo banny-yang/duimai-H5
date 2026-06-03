@@ -64,6 +64,7 @@ export default function RunnerApp({ eventGuid }: Props) {
   const [sosOpen, setSosOpen] = useState(false);
   const [sosToast, setSosToast] = useState<string | null>(null);
   const [legal, setLegal] = useState<"privacy" | "terms" | null>(null);
+  const [chatMaximized, setChatMaximized] = useState(false);
 
   const openVerify = () => setVerifyOpen(true);
 
@@ -160,8 +161,10 @@ export default function RunnerApp({ eventGuid }: Props) {
         </div>
       </header>
 
-      <main className="runner-main min-w-0">
-        <div className="runner-hub">
+      <main
+        className={`runner-main min-w-0${chatMaximized ? " runner-main--chat-maximized" : ""}`}
+      >
+        <div className="runner-hub" aria-hidden={chatMaximized}>
           {!identityVerified && <IdentityVerifyBanner onVerify={openVerify} />}
           <NotificationBar event={event} onClick={handleNoticeClick} />
           <ShortcutGrid onSelect={handleShortcut} />
@@ -176,6 +179,8 @@ export default function RunnerApp({ eventGuid }: Props) {
           h5QuickQuestions={h5QuickQuestions}
           inboxPollEnabled={apiConnected && identityVerified}
           historyEnabled={apiConnected && identityVerified}
+          maximized={chatMaximized}
+          onToggleMaximize={() => setChatMaximized((v) => !v)}
         />
       </main>
 

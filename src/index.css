@@ -139,6 +139,19 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
+    transition:
+      max-height 0.28s ease,
+      opacity 0.22s ease,
+      margin 0.28s ease;
+  }
+
+  /* 聊天最大化：收起金刚区/通知条，聊天区占满主内容 */
+  .runner-main--chat-maximized .runner-hub {
+    max-height: 0 !important;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
   }
 
   .chat-section {
@@ -148,6 +161,17 @@
     border-top: 1px solid var(--secondary-border);
     border-radius: 1rem 1rem 0 0;
     box-shadow: 0 -2px 12px rgba(15, 23, 42, 0.05);
+    transition: border-radius 0.28s ease, box-shadow 0.28s ease;
+  }
+
+  .chat-section--maximized {
+    border-radius: 0;
+    box-shadow: none;
+    border-top-color: transparent;
+  }
+
+  .chat-section--maximized .chat-section-header {
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.06);
   }
 
   .chat-messages-area {
@@ -194,7 +218,7 @@
   }
 
   @media (max-height: 720px) {
-    .runner-hub {
+    .runner-hub:not([aria-hidden="true"]) {
       max-height: min(32vh, 200px);
       max-height: min(32dvh, 200px);
     }
