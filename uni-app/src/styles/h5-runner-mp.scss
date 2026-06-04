@@ -32,10 +32,10 @@
   z-index: var(--z-surface);
 }
 
-/* 信息区：收起态根据内容高度，全屏时完全被聊天区覆盖 */
+/* 信息区：收起态占据中间空间，全屏时完全被聊天区覆盖 */
 .runner-body {
-  flex: 0 0 auto;
-  min-height: 0;
+  flex: 1 1 auto;
+  min-height: 80px;
   overflow: visible;
   position: relative;
   z-index: var(--z-info);
@@ -46,8 +46,10 @@
 
 /* 全屏时信息区不可交互 */
 .runner-shell--chat-maximized .runner-body {
+  flex: 0 0 auto;
   overflow: hidden;
-  max-height: none;
+  max-height: 0;
+  min-height: 0;
   pointer-events: none;
 }
 
@@ -86,13 +88,13 @@
   box-shadow: 0 -4rpx 24rpx rgba(15, 23, 42, 0.05);
 }
 
-/* 全屏：overlay 盖住信息区，仍不遮挡协议栏 */
+/* 全屏：overlay 盖住信息区，底部到协议栏上方 */
 .runner-shell--chat-maximized .runner-chat-dock {
   position: absolute;
   left: 0;
   right: 0;
-  top: var(--mp-header-h, 0);
-  bottom: var(--mp-footer-h, 0);
+  top: calc(var(--mp-header-h, 0px) + var(--mp-body-h, 0px));
+  bottom: 0;
   flex: none;
   height: auto;
   z-index: var(--z-chat);
@@ -125,24 +127,11 @@
   background: #fff;
 }
 
+/* 全屏时 chat-panel 样式 */
 .runner-shell--chat-maximized .runner-chat-panel {
   flex: 1 1 auto;
   height: 100%;
   min-height: 0;
-  display: block;
-}
-
-/* 确保 footer 在 flex 布局中 */
-.runner-footer,
-.runner-footer-host {
-  flex-shrink: 0;
-  z-index: var(--z-surface);
-  background: #fff;
-  position: relative;
-}
-
-.runner-footer-host {
-  /* 覆盖 ChatFooter 默认的 block 显示 */
   display: block;
 }
 
@@ -189,5 +178,15 @@
   min-height: 360rpx;
   height: 0;
   box-sizing: border-box;
+}
+
+/* 协议栏固定在底部 */
+.runner-footer,
+.runner-footer-host {
+  flex-shrink: 0;
+  z-index: var(--z-surface);
+  background: #fff;
+  position: relative;
+  width: 100%;
 }
 /* #endif */

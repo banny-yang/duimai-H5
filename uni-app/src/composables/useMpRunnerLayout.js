@@ -87,19 +87,21 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
       query()
         .select('.runner-header')
         .boundingClientRect()
+        .select('.runner-body')
+        .boundingClientRect()
         .select('.runner-footer-host')
         .boundingClientRect()
         .exec((res) => {
           const headerH = Math.max(0, Math.floor(Number(res?.[0]?.height) || 0))
-          const footerH = Math.max(0, Math.floor(Number(res?.[1]?.height) || 0))
+          const bodyH = Math.max(0, Math.floor(Number(res?.[1]?.height) || 0))
+          const footerH = Math.max(0, Math.floor(Number(res?.[2]?.height) || 0))
           const winH = getMpPageHeightPx() || 667
-          const contentH = Math.max(0, winH - headerH - footerH)
           const maximized = Boolean(chatMaximizedRef.value)
 
           applyVars({
             '--mp-header-h': `${headerH}px`,
+            '--mp-body-h': `${bodyH}px`,
             '--mp-footer-h': `${footerH}px`,
-            '--mp-content-h': `${contentH}px`,
             '--mp-sos-bottom': `${footerH + 88}px`,
           })
 
