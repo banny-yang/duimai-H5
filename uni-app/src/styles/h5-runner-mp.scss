@@ -62,10 +62,10 @@
   overflow: visible;
 }
 
-/* 聊天区：普通态根据内容高度，全屏态 overlay 盖住信息区 */
+/* 聊天区：普通态占满剩余空间（最小200px），全屏态占满全部 */
 .runner-chat-dock {
-  flex: 0 0 auto;
-  min-height: 180px;
+  flex: 1 1 200px;
+  max-height: 55vh;
   overflow: hidden;
   z-index: var(--z-chat);
   display: flex;
@@ -87,10 +87,9 @@
   box-shadow: 0 -4rpx 24rpx rgba(15, 23, 42, 0.05);
 }
 
-/* 全屏：chat-dock 占据 header 和 footer 之间的所有空间 */
+/* 全屏：chat-dock 保持 flex 占据剩余空间 */
 .runner-shell--chat-maximized .runner-chat-dock {
   flex: 1 1 auto;
-  position: relative;
   min-height: 0;
 }
 
