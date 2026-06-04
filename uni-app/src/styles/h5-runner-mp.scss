@@ -128,9 +128,14 @@
   position: relative;
   z-index: 2;
   background: #fff;
-  margin-bottom: 0;
-  padding-bottom: env(safe-area-inset-bottom);
+  margin: 0;
+  padding: 0;
   border-top: 1px solid var(--secondary-border);
+}
+
+/* 全屏态：chat-input-footer 需要 safe-area */
+.runner-shell--chat-maximized .runner-chat-dock .chat-input-footer {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* 全屏时 chat-panel 样式 */
