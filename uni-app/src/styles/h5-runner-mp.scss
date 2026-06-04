@@ -1,202 +1,315 @@
 @import './h5-tokens.scss';
 
-/* 小程序 runner：flex 文档流 + JS px 变量；聊天区为协议栏正上方兄弟节点 */
+/*
+ * 微信小程序 runner 页面样式
+ * 
+ * 布局说明：
+ * - 采用 flex 纵向布局 (flex-direction: column)
+ * - 页面结构：标题栏 → 信息区 → 聊天区 → 协议栏
+ * 
+ * 收起态布局：
+ *   ┌─────────────────────┐
+ *   │       标题栏        │ (flex-shrink: 0, 固定高度)
+ *   ├─────────────────────┤
+ *   │      信息区         │ (flex: 0 0 auto, 由内容撑开)
+ *   │   - 通知公告卡片    │
+ *   │   - 身份验证卡片    │
+ *   │   - 快捷入口卡片    │
+ *   ├─────────────────────┤
+ *   │      聊天区         │ (flex: 0 0 auto, 由内容撑开)
+ *   │   - 消息区          │
+ *   │   - 快捷问题        │
+ *   │   - 输入框          │
+ *   ├─────────────────────┤
+ *   │      协议栏         │ (flex-shrink: 0, 固定高度)
+ *   └─────────────────────┘
+ * 
+ * 全屏态布局：
+ *   ┌─────────────────────┐
+ *   │       标题栏        │
+ *   ├─────────────────────┤
+ *   │                      │
+ *   │   聊天区(全屏)      │ (flex: 1 1 auto, 填满剩余空间)
+ *   │   覆盖信息区        │
+ *   │                      │
+ *   ├─────────────────────┤
+ *   │      协议栏         │
+ *   └─────────────────────┘
+ * 
+ * CSS 变量说明：
+ * - --mp-header-h: 标题栏高度
+ * - --mp-body-h: 信息区高度
+ * - --mp-footer-h: 协议栏高度
+ * - --mp-sos-bottom: SOS按钮底部位置
+ * - --z-info: 信息区层级
+ * - --z-surface: 表面层级(标题栏/协议栏/SOS按钮)
+ * - --z-chat: 聊天区层级
+ * - --z-sos: SOS按钮层级
+ */
+
 /* #ifdef MP-WEIXIN */
+
+/* ========================================
+   根容器样式
+   ======================================== */
+
+/* 小程序环境下的 runner 根容器 */
 .h5-root--runner {
-  max-width: none;
-  margin: 0;
-  box-shadow: none;
-  overflow: hidden;
-  height: 100%;
-  box-sizing: border-box;
-  --z-info: 1;
-  --z-surface: 2;
-  --z-chat: 3;
-  --z-sos: 100;
+  max-width: none;                    /* 不限制宽度，全屏显示 */
+  margin: 0;                          /* 无外边距 */
+  box-shadow: none;                  /* 无阴影 */
+  overflow: hidden;                  /* 隐藏溢出内容 */
+  height: 100%;                      /* 高度100%填充整个容器 */
+  box-sizing: border-box;            /* 盒模型：边框盒 */
+
+  /* 定义层级变量，用于控制组件显示顺序 */
+  --z-info: 1;                       /* 信息区层级 */
+  --z-surface: 2;                    /* 表面层级：标题栏、协议栏 */
+  --z-chat: 3;                       /* 聊天区层级 */
+  --z-sos: 100;                      /* SOS按钮层级（最高） */
 }
 
+/* ========================================
+   主容器样式
+   ======================================== */
+
+/* runner 主容器：flex 纵向布局 */
 .runner-shell {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0 !important;
-  max-height: 100%;
-  overflow: hidden;
-  position: relative;
-  background: var(--secondary-bg);
-  align-items: stretch;
+  display: flex;                      /* 启用 flex 布局 */
+  flex-direction: column;             /* 子元素纵向排列 */
+  height: 100%;                      /* 高度100% */
+  min-height: 0 !important;          /* 允许压缩到0 */
+  max-height: 100%;                  /* 最大高度100% */
+  overflow: hidden;                   /* 隐藏溢出内容 */
+  position: relative;                /* 相对定位，用于子元素绝对定位 */
+  background: var(--secondary-bg);  /* 背景色：次要背景色 */
+  align-items: stretch;               /* 子元素拉伸到容器宽度 */
 }
 
+/* ========================================
+   标题栏样式
+   ======================================== */
+
+/* 标题栏：不压缩，固定在顶部 */
 .runner-header {
-  flex-shrink: 0;
-  position: relative;
-  z-index: var(--z-surface);
+  flex-shrink: 0;                    /* 不允许压缩 */
+  position: relative;                /* 相对定位 */
+  z-index: var(--z-surface);        /* 在表面层级 */
 }
 
-/* 信息区：收起态由内容撑开高度，全屏时折叠 */
+/* ========================================
+   信息区样式
+   ======================================== */
+
+/* 信息区容器：收起态由内容撑开高度，全屏时折叠隐藏 */
 .runner-body {
-  flex: 0 0 auto;
-  min-height: 0;
-  overflow: hidden;
-  position: relative;
-  z-index: var(--z-info);
-  max-height: none;
+  flex: 0 0 auto;                    /* 不扩展，固定由内容决定高度 */
+  min-height: 0;                    /* 最小高度为0 */
+  overflow: hidden;                  /* 隐藏溢出内容（可改为auto允许滚动） */
+  position: relative;               /* 相对定位 */
+  z-index: var(--z-info);           /* 信息区层级 */
+  max-height: none;                  /* 不限制最大高度 */
 }
 
-/* 全屏时信息区完全折叠 */
+/* 全屏态：信息区完全折叠，释放空间给聊天区 */
 .runner-shell--chat-maximized .runner-body {
-  flex: 0 0 auto;
-  max-height: 0 !important;
-  min-height: 0 !important;
-  height: 0 !important;
-  overflow: hidden;
-  pointer-events: none;
+  flex: 0 0 auto;                    /* 保持不扩展 */
+  max-height: 0 !important;          /* 最大高度设为0，隐藏内容 */
+  min-height: 0 !important;         /* 最小高度为0 */
+  height: 0 !important;              /* 高度强制为0 */
+  overflow: hidden;                  /* 隐藏溢出内容 */
+  pointer-events: none;              /* 禁止交互 */
 }
 
+/* 信息滚动区域：允许内容正常显示 */
 .runner-info-scroll {
-  overflow: visible;
+  overflow: visible;                 /* 溢出可见 */
 }
 
 .runner-info-scroll .runner-top-section,
 .runner-info-scroll .runner-hub {
-  max-height: none;
-  overflow: visible;
+  max-height: none;                  /* 不限制高度 */
+  overflow: visible;                 /* 溢出可见 */
 }
 
-/* 聊天区：收起态由内容撑开高度，全屏态占满全部 */
+/* ========================================
+   聊天区容器样式
+   ======================================== */
+
+/* 聊天区容器
+ * - 收起态：由内容撑开高度（flex: 0 0 auto）
+ * - 全屏态：填充 header 和 footer 之间的所有空间（通过 JS 切换 flex 值）
+ */
 .runner-chat-dock {
-  flex: 0 0 auto;
-  overflow: hidden;
-  z-index: var(--z-chat);
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  background: #fff;
-  margin: 0;
-  padding: 0;
-  align-self: stretch;
+  flex: 0 0 auto;                    /* 不扩展，由内容决定高度 */
+  overflow: hidden;                  /* 隐藏溢出内容 */
+  z-index: var(--z-chat);           /* 聊天区层级 */
+  display: flex;                     /* 启用 flex 布局 */
+  flex-direction: column;            /* 子元素纵向排列 */
+  box-sizing: border-box;            /* 盒模型：边框盒 */
+  background: #fff;                  /* 白色背景 */
+  margin: 0;                         /* 无外边距 */
+  padding: 0;                        /* 无内边距 */
+  align-self: stretch;                /* 拉伸到容器宽度 */
 }
 
-/* 收起态：chat-section 由内容撑开高度 */
+/* ========================================
+   聊天区内容样式（收起态）
+   ======================================== */
+
+/* 聊天 section 容器（收起态）
+ * 由内部内容撑开高度，不强制填充父容器
+ */
 .chat-section--mp {
-  flex: 0 0 auto;
-  min-height: 0;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: #fff;
-  border-top: 1px solid var(--secondary-border);
-  border-radius: 32rpx 32rpx 0 0;
-  box-shadow: 0 -4rpx 24rpx rgba(15, 23, 42, 0.05);
+  flex: 0 0 auto;                    /* 不扩展，由内容决定高度 */
+  min-height: 0;                     /* 最小高度为0 */
+  width: 100%;                       /* 宽度100% */
+  display: flex;                     /* 启用 flex 布局 */
+  flex-direction: column;            /* 子元素纵向排列 */
+  overflow: hidden;                  /* 隐藏溢出内容 */
+  background: #fff;                  /* 白色背景 */
+  border-top: 1px solid var(--secondary-border);  /* 顶部边框 */
+  border-radius: 32rpx 32rpx 0 0;    /* 顶部圆角 */
+  box-shadow: 0 -4rpx 24rpx rgba(15, 23, 42, 0.05);  /* 顶部阴影 */
 }
 
-/* 全屏：chat-dock 填充 header 和 footer 之间的所有空间 */
-.runner-shell--chat-maximized .runner-chat-dock {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
-}
-
-/* 全屏：chat-section 填充整个 dock */
-.runner-shell--chat-maximized .runner-chat-dock .chat-section--mp {
-  flex: 1 1 auto;
-  min-height: 0;
-  height: 100%;
-  border-radius: 0;
-  box-shadow: none;
-  border-top-color: transparent;
-}
-
+/* 聊天区 header：固定高度，不压缩 */
 .runner-chat-dock .chat-section-header {
-  flex-shrink: 0;
-  min-height: 88rpx;
+  flex-shrink: 0;                    /* 不允许压缩 */
+  min-height: 88rpx;                /* 最小高度 88rpx */
 }
 
+/* 聊天消息区域：占据剩余空间，可滚动 */
 .runner-chat-dock .chat-messages-area {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
+  flex: 1 1 auto;                    /* 扩展占据剩余空间 */
+  min-height: 0;                     /* 最小高度为0，允许压缩 */
+  overflow: hidden;                  /* 隐藏溢出内容 */
 }
 
+/* 聊天输入区 footer：固定高度，不压缩 */
 .runner-chat-dock .chat-input-footer {
-  flex-shrink: 0;
-  position: relative;
-  z-index: 2;
-  background: #fff;
-  margin: 0;
-  padding: 0;
-  border-top: 1px solid var(--secondary-border);
+  flex-shrink: 0;                    /* 不允许压缩 */
+  position: relative;                /* 相对定位 */
+  z-index: 2;                        /* 在第2层级 */
+  background: #fff;                  /* 白色背景 */
+  margin: 0;                         /* 无外边距 */
+  padding: 0;                        /* 无内边距（收起态不需要safe-area） */
+  border-top: 1px solid var(--secondary-border);  /* 顶部边框 */
 }
 
-/* 全屏态：chat-input-footer 需要 safe-area */
+/* ========================================
+   全屏态样式
+   ======================================== */
+
+/* 全屏态：聊天区容器填充剩余空间 */
+.runner-shell--chat-maximized .runner-chat-dock {
+  flex: 1 1 auto;                    /* 扩展占据所有剩余空间 */
+  min-height: 0;                     /* 最小高度为0 */
+  overflow: hidden;                  /* 隐藏溢出内容 */
+}
+
+/* 全屏态：chat-section 填充整个 dock */
+.runner-shell--chat-maximized .runner-chat-dock .chat-section--mp {
+  flex: 1 1 auto;                    /* 扩展占据所有剩余空间 */
+  min-height: 0;                     /* 最小高度为0 */
+  height: 100%;                      /* 高度100% */
+  border-radius: 0;                  /* 无圆角 */
+  box-shadow: none;                   /* 无阴影 */
+  border-top-color: transparent;     /* 顶部边框透明 */
+}
+
+/* 全屏态：chat-input-footer 需要底部安全区域 */
 .runner-shell--chat-maximized .runner-chat-dock .chat-input-footer {
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);  /* 底部安全区域 */
 }
 
-/* 全屏时 chat-panel 样式 */
+/* 全屏态：chat-panel 样式 */
 .runner-shell--chat-maximized .runner-chat-panel {
-  flex: 1 1 auto;
-  height: 100%;
-  min-height: 0;
-  display: block;
+  flex: 1 1 auto;                    /* 扩展占据所有剩余空间 */
+  height: 100%;                      /* 高度100% */
+  min-height: 0;                     /* 最小高度为0 */
+  display: block;                    /* 块级显示 */
 }
 
+/* ========================================
+   SOS 悬浮按钮样式
+   ======================================== */
+
+/* SOS 按钮：固定在右下角，不受布局影响 */
 .sos-float-wrap {
-  position: fixed;
-  right: 20rpx;
-  bottom: var(--mp-sos-bottom, calc(120rpx + env(safe-area-inset-bottom)));
-  top: auto !important;
-  transform: none !important;
-  z-index: var(--z-sos);
+  position: fixed;                   /* 固定定位 */
+  right: 20rpx;                      /* 右边距 20rpx */
+  bottom: var(--mp-sos-bottom, calc(120rpx + env(safe-area-inset-bottom)));  /* 底部位置 */
+  top: auto !important;              /* 顶部自动 */
+  transform: none !important;        /* 不使用变换 */
+  z-index: var(--z-sos);             /* SOS按钮层级（最高） */
 }
 
+/* ========================================
+   聊天最大化按钮样式
+   ======================================== */
+
+/* 聊天最大化按钮：强制显示，确保在所有状态下可见 */
 .chat-max-btn {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0 !important;
-  width: auto !important;
-  min-width: 88rpx !important;
-  min-height: 56rpx !important;
-  height: 56rpx !important;
-  padding: 0 16rpx !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+  display: flex !important;          /* 强制使用 flex 显示 */
+  align-items: center;                /* 垂直居中 */
+  justify-content: center;           /* 水平居中 */
+  flex-shrink: 0 !important;         /* 不允许压缩 */
+  width: auto !important;            /* 宽度自适应 */
+  min-width: 88rpx !important;       /* 最小宽度 88rpx */
+  min-height: 56rpx !important;      /* 最小高度 56rpx */
+  height: 56rpx !important;          /* 固定高度 56rpx */
+  padding: 0 16rpx !important;       /* 内边距 0 16rpx */
+  visibility: visible !important;     /* 强制可见 */
+  opacity: 1 !important;             /* 强制不透明 */
 }
 
+/* 聊天最大化按钮文字 */
 .chat-max-btn-text {
-  font-size: 24rpx;
-  font-weight: 600;
-  color: var(--secondary-text);
-  line-height: 1;
-  white-space: nowrap;
+  font-size: 24rpx;                  /* 字体大小 24rpx */
+  font-weight: 600;                  /* 字体加粗 */
+  color: var(--secondary-text);      /* 字体颜色：次要文字色 */
+  line-height: 1;                    /* 行高为1 */
+  white-space: nowrap;                /* 不换行 */
 }
 
+/* ========================================
+   页面选择器样式（其他页面）
+   ======================================== */
+
+/* 页面容器：全屏 flex 布局 */
 .picker-page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #fff;
+  min-height: 100vh;                 /* 最小高度100vh */
+  display: flex;                     /* 启用 flex 布局 */
+  flex-direction: column;            /* 子元素纵向排列 */
+  background: #fff;                   /* 白色背景 */
 }
 
+/* 页面列表：占据剩余空间 */
 .picker-list {
-  flex: 1;
-  min-height: 360rpx;
-  height: 0;
-  box-sizing: border-box;
+  flex: 1;                           /* 扩展占据所有剩余空间 */
+  min-height: 360rpx;                /* 最小高度 360rpx */
+  height: 0;                         /* 高度为0，靠内容撑开 */
+  box-sizing: border-box;             /* 盒模型：边框盒 */
 }
 
-/* 协议栏固定在底部，紧贴页面底部 */
+/* ========================================
+   协议栏样式
+   ======================================== */
+
+/* 协议栏：固定在底部，不压缩
+ * 紧贴在 runner-shell 的最下方
+ */
 .runner-footer,
 .runner-footer-host {
-  flex-shrink: 0;
-  z-index: var(--z-surface);
-  background: #fff;
-  position: relative;
-  width: 100%;
-  margin: 0 !important;
-  padding: 12rpx 24rpx calc(12rpx + env(safe-area-inset-bottom)) !important;
-  box-sizing: border-box;
+  flex-shrink: 0;                    /* 不允许压缩 */
+  z-index: var(--z-surface);        /* 在表面层级 */
+  background: #fff;                 /* 白色背景 */
+  position: relative;                /* 相对定位 */
+  width: 100%;                       /* 宽度100% */
+  margin: 0 !important;             /* 无外边距 */
+  padding: 12rpx 24rpx calc(12rpx + env(safe-area-inset-bottom)) !important;  /* 内边距，底部包含安全区域 */
+  box-sizing: border-box;            /* 盒模型：边框盒 */
 }
+
 /* #endif */
