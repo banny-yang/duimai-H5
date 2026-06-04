@@ -32,7 +32,7 @@
   z-index: var(--z-surface);
 }
 
-/* 信息区：占据顶栏与聊天之间的全部剩余高度 */
+/* 信息区：收起态根据内容高度，全屏时完全被聊天区覆盖 */
 .runner-body {
   position: absolute;
   left: 0;
@@ -43,28 +43,33 @@
   min-height: 0;
   overflow: hidden;
   z-index: var(--z-info);
+  /* 收起态信息区可滚动查看全部内容 */
+  max-height: 60vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .runner-shell--chat-maximized .runner-body {
   bottom: var(--mp-footer-h, 0);
   pointer-events: none;
+  overflow: hidden;
+  max-height: none;
 }
 
 .runner-info-scroll {
-  height: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  box-sizing: border-box;
+  overflow: visible;
 }
 
-.runner-info-scroll .runner-top-section {
-  max-height: none;
-}
-
+.runner-info-scroll .runner-top-section,
 .runner-info-scroll .runner-hub {
   max-height: none;
-  overflow-y: visible;
+  overflow: visible;
+}
+
+/* 全屏时信息区不可滚动 */
+.runner-shell--chat-maximized .runner-body {
+  overflow: hidden;
+  max-height: none;
 }
 
 /* 聊天区：普通态随内容高度，紧挨协议栏；全屏态 overlay 盖住信息区 */
