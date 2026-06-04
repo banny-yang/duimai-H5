@@ -142,6 +142,14 @@ const nearBottom = ref(true)
 const useMpScrollFill = isMpWeixinPlatform()
 
 const messagesScrollStyle = computed(() => {
+  if (useMpScrollFill && props.maximized) {
+    return {
+      height: '100%',
+      width: '100%',
+      minHeight: '0',
+      boxSizing: 'border-box',
+    }
+  }
   if (useMpScrollFill && props.messagesScrollPx > 0) {
     return {
       height: `${props.messagesScrollPx}px`,
@@ -431,4 +439,30 @@ onUnmounted(() => {
 .chat-max-btn {
   flex-shrink: 0;
 }
+
+/* #ifdef MP-WEIXIN */
+.chat-section--mp {
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-section--mp.chat-section--maximized {
+  height: 100%;
+  min-height: 0;
+}
+
+.chat-section--mp .chat-section-header,
+.chat-section--mp .chat-input-footer {
+  flex-shrink: 0;
+}
+
+.chat-section--mp .chat-messages-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+/* #endif */
 </style>

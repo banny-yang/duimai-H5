@@ -47,6 +47,7 @@
         >
           <ChatPanel
             ref="chatPanelRef"
+            class="runner-chat-panel"
             :phase="phase"
             :runner="runner"
             :greeting="greeting"
@@ -79,6 +80,7 @@
         <view class="runner-chat-slot">
           <ChatPanel
             ref="chatPanelRef"
+            class="runner-chat-panel"
             :phase="phase"
             :runner="runner"
             :greeting="greeting"
@@ -103,6 +105,7 @@
       />
 
       <ChatFooter
+        class="runner-footer-host"
         :footer-support="footerSupport"
         :hide-powered-by="Boolean(branding?.hidePoweredBy)"
         :locale="locale"

@@ -11,6 +11,7 @@
   box-sizing: border-box;
   --z-info: 1;
   --z-surface: 2;
+  --z-chat: 3;
   --z-sos: 100;
 }
 
@@ -27,15 +28,26 @@
 
 .runner-header {
   flex-shrink: 0;
+  position: relative;
+  z-index: var(--z-surface);
 }
 
 /* 信息区：占据顶栏与聊天之间的全部剩余高度 */
 .runner-body {
-  flex: 1 1 auto;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--mp-header-h, 0);
+  bottom: calc(var(--mp-footer-h, 0px) + var(--mp-chat-dock-h, 440rpx));
+  flex: none;
   min-height: 0;
   overflow: hidden;
-  position: relative;
   z-index: var(--z-info);
+}
+
+.runner-shell--chat-maximized .runner-body {
+  bottom: var(--mp-footer-h, 0);
+  pointer-events: none;
 }
 
 .runner-info-scroll {
@@ -57,11 +69,15 @@
 
 /* 聊天区：普通态随内容高度，紧挨协议栏；全屏态 overlay 盖住信息区 */
 .runner-chat-dock {
-  flex: 0 0 auto;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--mp-footer-h, 0);
+  flex: none;
   height: auto;
   min-height: 0;
   overflow: hidden;
-  z-index: var(--z-surface);
+  z-index: var(--z-chat);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -70,18 +86,11 @@
 
 /* 全屏：overlay 盖住信息区，仍不遮挡协议栏 */
 .runner-shell--chat-maximized .runner-chat-dock {
-  position: absolute;
-  left: 0;
-  right: 0;
   top: var(--mp-header-h, 0);
   bottom: var(--mp-footer-h, 0);
-  height: auto;
-  flex: none;
-  z-index: var(--z-surface);
-}
-
-.runner-shell--chat-maximized .runner-body {
-  pointer-events: none;
+  height: var(--mp-content-h, auto);
+  max-height: var(--mp-content-h, none);
+  z-index: var(--z-chat);
 }
 
 .runner-chat-dock .chat-section--mp {
@@ -100,6 +109,7 @@
 .runner-shell--chat-maximized .runner-chat-dock .chat-section--mp {
   flex: 1 1 auto;
   height: 100%;
+  min-height: 0;
 }
 
 .runner-chat-dock--maximized .chat-section--mp,
@@ -122,13 +132,31 @@
 
 .runner-chat-dock .chat-input-footer {
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
   background: #fff;
+}
+
+.runner-shell--chat-maximized .runner-chat-panel {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  display: block;
 }
 
 .runner-footer {
   flex-shrink: 0;
   z-index: var(--z-surface);
   background: #fff;
+}
+
+.runner-footer-host {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-surface);
+  display: block;
 }
 
 .sos-float-wrap {

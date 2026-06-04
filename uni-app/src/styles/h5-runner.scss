@@ -1,5 +1,4 @@
 @import './h5-tokens.scss';
-@import './h5-runner-mp.scss';
 
 /* H5 壳：与 #root max-w-md 一致 */
 .h5-root {
@@ -889,3 +888,5 @@
   color: var(--primary);
   font-weight: 700;
 }
+
+@import './h5-runner-mp.scss';

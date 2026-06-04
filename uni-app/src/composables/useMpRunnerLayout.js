@@ -9,6 +9,8 @@ import {
 /** 收起态消息区约占「顶栏与协议栏之间」高度的比例 */
 const NORMAL_CHAT_RATIO = 0.44
 const MIN_MESSAGES_PX = 100
+const HEADER_FALLBACK_RPX = 96
+const INPUT_FOOTER_FALLBACK_RPX = 220
 
 /**
  * 小程序 runner 页布局：顶栏 | 信息(flex:1) | 聊天(贴协议栏) | 协议栏
@@ -20,6 +22,7 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
 
   let unbindResize = () => {}
   let debounceTimer = null
+  let layoutVars = {}
 
   function query() {
     const q = uni.createSelectorQuery()
@@ -28,7 +31,17 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
   }
 
   function applyVars(vars) {
-    rootLayoutStyle.value = { ...getMpPageLayoutStyle(), ...vars }
+    layoutVars = { ...layoutVars, ...vars }
+    rootLayoutStyle.value = { ...getMpPageLayoutStyle(), ...layoutVars }
+  }
+
+  function rpxToPx(rpx) {
+    try {
+      const width = Number(uni.getSystemInfoSync().windowWidth) || 375
+      return Math.floor((rpx * width) / 750)
+    } catch {
+      return Math.floor(rpx / 2)
+    }
   }
 
   function measureMessagesScrollPx(contentH, maximized) {
@@ -42,9 +55,17 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
           .select('.chat-input-footer')
           .boundingClientRect()
           .exec((res) => {
-            const dockH = Math.floor(Number(res?.[0]?.height) || 0)
-            const headerH = Math.floor(Number(res?.[1]?.height) || 0)
-            const inputH = Math.floor(Number(res?.[2]?.height) || 0)
+            const dockH = Math.floor(Number(res?.[0]?.height) || contentH || 0)
+            const headerH = Math.floor(
+              Number(res?.[1]?.height) || rpxToPx(HEADER_FALLBACK_RPX),
+            )
+            const inputH = Math.floor(
+              Number(res?.[2]?.height) || rpxToPx(INPUT_FOOTER_FALLBACK_RPX),
+            )
+            applyVars({
+              '--mp-chat-header-h': `${headerH}px`,
+              '--mp-chat-input-h': `${inputH}px`,
+            })
             if (dockH <= 0) return
             const scrollH = Math.max(MIN_MESSAGES_PX, dockH - headerH - inputH)
             messagesScrollPx.value = scrollH
@@ -63,8 +84,16 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
         .select('.chat-input-footer')
         .boundingClientRect()
         .exec((res) => {
-          const headerH = Math.floor(Number(res?.[0]?.height) || 0)
-          const inputH = Math.floor(Number(res?.[1]?.height) || 0)
+          const headerH = Math.floor(
+            Number(res?.[0]?.height) || rpxToPx(HEADER_FALLBACK_RPX),
+          )
+          const inputH = Math.floor(
+            Number(res?.[1]?.height) || rpxToPx(INPUT_FOOTER_FALLBACK_RPX),
+          )
+          applyVars({
+            '--mp-chat-header-h': `${headerH}px`,
+            '--mp-chat-input-h': `${inputH}px`,
+          })
           const scrollH = Math.max(
             MIN_MESSAGES_PX,
             targetChatH - headerH - inputH,
@@ -82,7 +111,7 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
       query()
         .select('.runner-header')
         .boundingClientRect()
-        .select('.runner-footer')
+        .select('.runner-footer-host')
         .boundingClientRect()
         .exec((res) => {
           const headerH = Math.max(0, Math.floor(Number(res?.[0]?.height) || 0))
