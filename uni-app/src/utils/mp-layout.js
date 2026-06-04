@@ -94,18 +94,12 @@ export function getMpPageHeightPx() {
 
 export function getMpPageLayoutStyle() {
 
-  const h = getMpPageHeightPx()
-
-  if (!h) return {}
-
+  // 不再使用固定 px 高度锁定，使用 100% 让页面自适应安全区域
+  // 标题栏和协议栏分别通过 env(safe-area-inset-*) 适配刘海屏
   return {
-
-    height: `${h}px`,
-
-    minHeight: `${h}px`,
-
-    maxHeight: `${h}px`,
-
+    height: '100%',
+    minHeight: '100%',
+    maxHeight: '100%',
   }
 
 }
