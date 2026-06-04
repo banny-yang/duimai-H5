@@ -443,10 +443,12 @@ onUnmounted(() => {
 /* #ifdef MP-WEIXIN */
 .chat-section--mp {
   width: 100%;
+  height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  flex: 1;
 }
 
 .chat-section--mp.chat-section--maximized {
