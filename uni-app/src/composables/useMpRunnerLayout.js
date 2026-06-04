@@ -6,13 +6,14 @@ import {
   isMpWeixinPlatform,
 } from '@/utils/mp-layout.js'
 
-/** 收起态消息区约占「顶栏与协议栏之间」高度的比例 */
-const NORMAL_CHAT_RATIO = 0.44
+/** 收起态消息区高度（px），不依赖 contentH */
+const NORMAL_MESSAGES_PX = 220
 const MIN_MESSAGES_PX = 100
 
 /**
- * 小程序 runner 页布局：顶栏 | 信息(flex:1) | 聊天(贴协议栏) | 协议栏
- * 普通态聊天区 height:auto，scroll-view 高度由 JS 注入 px
+ * 小程序 runner 页布局：
+ * - 收起态：信息区 flex:0 0 auto 由内容撑开，聊天区紧跟其后
+ * - 全屏态：chat-dock 用 absolute 覆盖顶栏与协议栏之间全部空间
  */
 export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
   const rootLayoutStyle = ref({})
@@ -31,9 +32,10 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
     rootLayoutStyle.value = { ...getMpPageLayoutStyle(), ...vars }
   }
 
-  function measureMessagesScrollPx(contentH, maximized) {
+  function measureMessagesScrollPx(maximized) {
     nextTick(() => {
       if (maximized) {
+        // 全屏：取 chat-dock 高度，减去 header 和 input
         query()
           .select('.runner-chat-dock')
           .boundingClientRect()
@@ -52,11 +54,7 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
         return
       }
 
-      const targetChatH = Math.max(
-        MIN_MESSAGES_PX + 120,
-        Math.floor(contentH * NORMAL_CHAT_RATIO),
-      )
-
+      // 收起态：消息区高度固定，不受 contentH 影响
       query()
         .select('.chat-section-header')
         .boundingClientRect()
@@ -65,11 +63,7 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
         .exec((res) => {
           const headerH = Math.floor(Number(res?.[0]?.height) || 0)
           const inputH = Math.floor(Number(res?.[1]?.height) || 0)
-          const scrollH = Math.max(
-            MIN_MESSAGES_PX,
-            targetChatH - headerH - inputH,
-            Math.floor(contentH * 0.22),
-          )
+          const scrollH = Math.max(MIN_MESSAGES_PX, NORMAL_MESSAGES_PX - headerH - inputH)
           messagesScrollPx.value = scrollH
         })
     })
@@ -98,9 +92,9 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
             '--mp-sos-bottom': `${footerH + 88}px`,
           })
 
-          measureMessagesScrollPx(contentH, maximized)
+          measureMessagesScrollPx(maximized)
           if (maximized) {
-            setTimeout(() => measureMessagesScrollPx(contentH, true), 80)
+            setTimeout(() => measureMessagesScrollPx(true), 80)
           }
         })
     })
