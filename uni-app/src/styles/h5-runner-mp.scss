@@ -74,8 +74,9 @@
   background: #fff;
 }
 
+/* chat-section: 占据整个 dock */
 .runner-chat-dock .chat-section--mp {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-height: 0;
   width: 100%;
   display: flex;
@@ -87,15 +88,15 @@
   box-shadow: 0 -4rpx 24rpx rgba(15, 23, 42, 0.05);
 }
 
-/* 全屏：chat-dock 保持 flex 占据剩余空间 */
+/* 全屏：chat-dock 填充 header 和 footer 之间的所有空间 */
 .runner-shell--chat-maximized .runner-chat-dock {
   flex: 1 1 auto;
   min-height: 0;
+  height: auto;
 }
 
 .runner-shell--chat-maximized .runner-chat-dock .chat-section--mp {
   flex: 1 1 auto;
-  height: 100%;
   min-height: 0;
   border-radius: 0;
   box-shadow: none;
