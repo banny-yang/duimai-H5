@@ -57,7 +57,7 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
           .select('.chat-input-footer')
           .boundingClientRect()
           .exec((res) => {
-            const dockH = Math.floor(Number(res?.[0]?.height) || contentH || 0)
+            const dockH = Math.floor(Number(res?.[0]?.height) || 0)
             const headerH = Math.floor(
               Number(res?.[1]?.height) || rpxToPx(HEADER_FALLBACK_RPX),
             )
@@ -75,26 +75,8 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
         return
       }
 
-      // 收起态：消息区高度固定，不受 contentH 影响
-      query()
-        .select('.chat-section-header')
-        .boundingClientRect()
-        .select('.chat-input-footer')
-        .boundingClientRect()
-        .exec((res) => {
-          const headerH = Math.floor(
-            Number(res?.[0]?.height) || rpxToPx(HEADER_FALLBACK_RPX),
-          )
-          const inputH = Math.floor(
-            Number(res?.[1]?.height) || rpxToPx(INPUT_FOOTER_FALLBACK_RPX),
-          )
-          applyVars({
-            '--mp-chat-header-h': `${headerH}px`,
-            '--mp-chat-input-h': `${inputH}px`,
-          })
-          const scrollH = Math.max(MIN_MESSAGES_PX, NORMAL_MESSAGES_PX - headerH - inputH)
-          messagesScrollPx.value = scrollH
-        })
+      // 收起态：消息区由 flex 填充，不需要 JS 设置固定高度
+      messagesScrollPx.value = 0
     })
   }
 
