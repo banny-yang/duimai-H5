@@ -25,7 +25,6 @@
 import { ref, watch, nextTick } from 'vue'
 import {
   getMpPageLayoutStyle,
-  getMpPageHeightPx,
   bindMpWindowResize,
   isMpWeixinPlatform,
 } from '@/utils/mp-layout.js'
@@ -34,8 +33,6 @@ import {
 const MIN_MESSAGES_PX = 100
 /** 标题栏高度回退值（rpx），用于获取不到元素高度时的计算 */
 const HEADER_FALLBACK_RPX = 96
-/** 输入框区域高度回退值（rpx），用于获取不到元素高度时的计算 */
-const INPUT_FOOTER_FALLBACK_RPX = 220
 
 /**
  * 创建小程序 runner 页面布局控制器
@@ -96,46 +93,33 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
   /**
    * 测量消息滚动区域高度
    * 
-   * 全屏态：根据 chat-dock 容器高度减去 header 和 input 的高度
-   * 收起态：由内容撑开高度，不需要设置固定高度
+   * 统一由 chat-dock 容器高度减去 header 高度来计算消息区高度
    * 
    * @param {boolean} maximized - 是否全屏
    */
   function measureMessagesScrollPx(maximized) {
     nextTick(() => {
-      if (maximized) {
-        // 全屏态：获取 chat-dock、header、input 的高度
-        query()
-          .select('.runner-chat-dock')
-          .boundingClientRect()
-          .select('.chat-section-header')
-          .boundingClientRect()
-          .select('.chat-input-footer')
-          .boundingClientRect()
-          .exec((res) => {
-            // 解析各元素高度，如果获取失败则使用回退值
-            const dockH = Math.floor(Number(res?.[0]?.height) || 0)
-            const headerH = Math.floor(
-              Number(res?.[1]?.height) || rpxToPx(HEADER_FALLBACK_RPX),
-            )
-            const inputH = Math.floor(
-              Number(res?.[2]?.height) || rpxToPx(INPUT_FOOTER_FALLBACK_RPX),
-            )
-            // 应用 header 和 input 的高度变量
-            applyVars({
-              '--mp-chat-header-h': `${headerH}px`,
-              '--mp-chat-input-h': `${inputH}px`,
-            })
-            // 计算消息滚动区域高度
-            if (dockH <= 0) return
-            const scrollH = Math.max(MIN_MESSAGES_PX, dockH - headerH - inputH)
-            messagesScrollPx.value = scrollH
+      // 获取 chat-dock 和 chat-section-header 的高度
+      query()
+        .select('.runner-chat-dock')
+        .boundingClientRect()
+        .select('.chat-section-header')
+        .boundingClientRect()
+        .exec((res) => {
+          // 解析各元素高度，如果获取失败则使用回退值
+          const dockH = Math.floor(Number(res?.[0]?.height) || 0)
+          const headerH = Math.floor(
+            Number(res?.[1]?.height) || rpxToPx(HEADER_FALLBACK_RPX),
+          )
+          // 应用 header 的高度变量
+          applyVars({
+            '--mp-chat-header-h': `${headerH}px`,
           })
-        return
-      }
-
-      // 收起态：消息区由 flex 填充，不需要 JS 设置固定高度
-      messagesScrollPx.value = 0
+          // 计算消息滚动区域高度
+          if (dockH <= 0) return
+          const scrollH = Math.max(MIN_MESSAGES_PX, dockH - headerH)
+          messagesScrollPx.value = scrollH
+        })
     })
   }
 
@@ -150,11 +134,13 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
     if (!isMpWeixinPlatform()) return
 
     nextTick(() => {
-      // 查询标题栏、信息区、协议栏的高度
+      // 查询标题栏、信息区、输入区、协议栏的高度
       query()
         .select('.runner-header')
         .boundingClientRect()
         .select('.runner-body')
+        .boundingClientRect()
+        .select('.runner-chat-input-fixed')
         .boundingClientRect()
         .select('.runner-footer-host')
         .boundingClientRect()
@@ -162,16 +148,19 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
           // 解析各区域高度，如果获取失败则默认为0
           const headerH = Math.max(0, Math.floor(Number(res?.[0]?.height) || 0))
           const bodyH = Math.max(0, Math.floor(Number(res?.[1]?.height) || 0))
-          const footerH = Math.max(0, Math.floor(Number(res?.[2]?.height) || 0))
-          const winH = getMpPageHeightPx() || 667  // 获取页面总高度
+          const inputH = Math.max(0, Math.floor(Number(res?.[2]?.height) || 0))
+          const footerH = Math.max(0, Math.floor(Number(res?.[3]?.height) || 0))
           const maximized = Boolean(chatMaximizedRef.value)  // 是否全屏
+
+          // SOS 按钮底部位置 = 协议栏高度 + 输入区高度 + 偏移
+          const sosBottom = footerH + inputH + 88
 
           // 应用布局变量到 CSS
           applyVars({
             '--mp-header-h': `${headerH}px`,   // 标题栏高度
             '--mp-body-h': `${bodyH}px`,       // 信息区高度
             '--mp-footer-h': `${footerH}px`,   // 协议栏高度
-            '--mp-sos-bottom': `${footerH + 88}px`,  // SOS按钮底部位置
+            '--mp-sos-bottom': `${sosBottom}px`,  // SOS按钮底部位置
           })
 
           // 测量消息滚动区域高度

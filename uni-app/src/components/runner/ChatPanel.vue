@@ -59,7 +59,7 @@
       <text v-if="showScrollBtn" class="chat-scroll-fab" @tap="scrollBottom">↓ 回到底部</text>
     </view>
 
-    <view class="chat-input-footer">
+    <view v-if="!hideInput" class="chat-input-footer">
       <scroll-view v-if="prompts.length" class="chat-prompts" scroll-x>
         <text
           v-for="(p, i) in prompts"
@@ -120,6 +120,8 @@ const props = defineProps({
   locale: { type: String, default: 'zh' },
   /** 小程序 scroll-view 高度(px)，由 useMpRunnerLayout 测算 */
   messagesScrollPx: { type: Number, default: 0 },
+  /** 小程序环境隐藏内部输入区，由父组件渲染 */
+  hideInput: { type: Boolean, default: false },
 })
 defineEmits(['toggle-maximize'])
 
@@ -142,14 +144,6 @@ const nearBottom = ref(true)
 const useMpScrollFill = isMpWeixinPlatform()
 
 const messagesScrollStyle = computed(() => {
-  if (useMpScrollFill && props.maximized) {
-    return {
-      height: '100%',
-      width: '100%',
-      minHeight: '0',
-      boxSizing: 'border-box',
-    }
-  }
   if (useMpScrollFill && props.messagesScrollPx > 0) {
     return {
       height: `${props.messagesScrollPx}px`,
@@ -157,7 +151,7 @@ const messagesScrollStyle = computed(() => {
       boxSizing: 'border-box',
     }
   }
-  return { height: '100%', width: '100%', boxSizing: 'border-box' }
+  return { height: '100%', width: '100%', minHeight: '0', boxSizing: 'border-box' }
 })
 
 watch(
@@ -167,7 +161,7 @@ watch(
   },
 )
 
-defineExpose({ remeasure: () => {} })
+defineExpose({ remeasure: () => {}, sendTextMessage, onPrompt })
 
 const prompts = computed(() =>
   resolveQuickPrompts(props.phase, props.h5QuickQuestions),

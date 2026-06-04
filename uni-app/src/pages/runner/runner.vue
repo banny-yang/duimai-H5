@@ -67,7 +67,7 @@
       <!-- 小程序使用自定义 flex 布局（非 Web 版本的 grid 布局） -->
       <template v-if="isMp">
         <!-- 信息区：包含通知公告、身份验证卡片、快捷入口 -->
-        <view class="runner-body">
+        <view class="runner-body" :class="{ 'runner-body--collapsed': chatMaximized }">
           <view class="runner-info-scroll">
             <RunnerTopSection
               :event="eventWithPhase"
@@ -78,12 +78,12 @@
           </view>
         </view>
         
-        <!-- 聊天区容器 -->
+        <!-- 聊天消息区：填充信息区和输入区之间的剩余空间 -->
         <view
           class="runner-chat-dock"
           :class="{ 'runner-chat-dock--maximized': chatMaximized }"
         >
-          <!-- 聊天面板组件 -->
+          <!-- 聊天面板组件（仅 header + 消息区，不含输入区） -->
           <ChatPanel
             ref="chatPanelRef"
             class="runner-chat-panel"
@@ -100,8 +100,40 @@
             :maximized="chatMaximized"
             :messages-scroll-px="messagesScrollPx"
             :locale="locale"
+            :hide-input="true"
             @toggle-maximize="chatMaximized = !chatMaximized"
           />
+        </view>
+
+        <!-- 聊天输入区：固定在协议栏上方 -->
+        <view class="runner-chat-input-fixed">
+          <scroll-view v-if="h5QuickQuestions" class="chat-prompts" scroll-x>
+            <text
+              v-for="(p, i) in (h5QuickQuestions[phase] || h5QuickQuestions.default || [])"
+              :key="i"
+              class="prompt-pill"
+              @tap="chatPanelRef && chatPanelRef.onPrompt && chatPanelRef.onPrompt(p)"
+            >
+              {{ p }}
+            </text>
+          </scroll-view>
+          <view class="runner-chat-input-row">
+            <input
+              class="runner-chat-input"
+              v-model="mpInputText"
+              :placeholder="t(locale, 'sendPlaceholder')"
+              :disabled="!chatEnabled"
+              confirm-type="send"
+              @confirm="onMpSendText"
+            />
+            <view
+              class="runner-chat-send-btn"
+              :class="{ disabled: !mpInputText.trim() || !chatEnabled }"
+              @tap="onMpSendText"
+            >
+              <text>发送</text>
+            </view>
+          </view>
         </view>
       </template>
 
@@ -221,6 +253,29 @@
 </template>
 
 <script setup>
+import { ref, computed, watch, onMounted, onUnmounted, getCurrentInstance } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { isMpWeixinPlatform } from '@/utils/mp-layout.js'
+import { t } from '@/utils/i18n.js'
+import { applyH5BrandTheme, brandThemeStyle } from '@/utils/h5-brand-theme.js'
+import { readPhaseOverride } from '@/utils/event-phase.js'
+import { isEventPublicGuid } from '@/utils/runner-api.js'
+import { useRunnerContext } from '@/composables/useRunnerContext.js'
+import { useMpRunnerLayout } from '@/composables/useMpRunnerLayout.js'
+import ConnectionError from '@/components/runner/ConnectionError.vue'
+import PhaseBadge from '@/components/runner/PhaseBadge.vue'
+import RunnerTopSection from '@/components/runner/RunnerTopSection.vue'
+import ChatPanel from '@/components/runner/ChatPanel.vue'
+import SosFloatingButton from '@/components/runner/SosFloatingButton.vue'
+import ChatFooter from '@/components/runner/ChatFooter.vue'
+import IdentityVerifyPopup from '@/components/runner/IdentityVerifyPopup.vue'
+import SosFlowModal from '@/components/runner/SosFlowModal.vue'
+import PickupGuideSheet from '@/components/runner/PickupGuideSheet.vue'
+import RunnerInfoSheet from '@/components/runner/RunnerInfoSheet.vue'
+import RouteMapSheet from '@/components/runner/RouteMapSheet.vue'
+import ShuttleSheet from '@/components/runner/ShuttleSheet.vue'
+import LegalSheet from '@/components/runner/LegalSheet.vue'
+
 /**
  * ========================================
  * 脚本部分 - 常量定义
@@ -306,6 +361,7 @@ const pickupOpen = ref(false)   // 接驳指引弹窗
 // 聊天状态
 const chatMaximized = ref(false)  // 聊天面板是否全屏
 const chatPanelRef = ref(null)     // 聊天面板组件引用
+const mpInputText = ref('')        // 小程序输入框文本
 
 // SOS 提示
 const sosToast = ref(null)  // 临时显示的提示信息
@@ -486,6 +542,20 @@ async function onIdentityVerified(bibNumber, idCardSuffix) {
  */
 function onRunnerUpdate(r) {
   runner.value = r
+}
+
+/**
+ * 小程序环境发送文本消息
+ * 调用 ChatPanel 的 sendTextMessage 方法
+ */
+function onMpSendText() {
+  const text = mpInputText.value.trim()
+  if (!text || !chatEnabled.value) return
+  mpInputText.value = ''
+  // 通过 chatPanelRef 调用 ChatPanel 内部的 sendTextMessage
+  if (chatPanelRef.value && typeof chatPanelRef.value.sendTextMessage === 'function') {
+    chatPanelRef.value.sendTextMessage(text)
+  }
 }
 
 /**

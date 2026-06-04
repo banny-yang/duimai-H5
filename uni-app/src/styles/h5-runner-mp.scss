@@ -5,23 +5,26 @@
  * 
  * 布局说明：
  * - 采用 flex 纵向布局 (flex-direction: column)
- * - 页面结构：标题栏 → 信息区 → 聊天区 → 协议栏
+ * - 页面结构：标题栏 → 信息区 → 聊天消息区 → 聊天输入区(固定) → 协议栏(固定)
  * 
  * 收起态布局：
  *   ┌─────────────────────┐
  *   │       标题栏        │ (flex-shrink: 0, 固定高度)
  *   ├─────────────────────┤
- *   │      信息区         │ (flex: 0 0 auto, 由内容撑开)
+ *   │      信息区         │ (flex-shrink: 0, 由内容撑开)
  *   │   - 通知公告卡片    │
  *   │   - 身份验证卡片    │
  *   │   - 快捷入口卡片    │
  *   ├─────────────────────┤
- *   │      聊天区         │ (flex: 0 0 auto, 由内容撑开)
- *   │   - 消息区          │
- *   │   - 快捷问题        │
- *   │   - 输入框          │
+ *   │   聊天消息区        │ (flex: 1 1 auto, 填充剩余空间)
+ *   │   - header          │
+ *   │   - 消息列表        │
  *   ├─────────────────────┤
- *   │      协议栏         │ (flex-shrink: 0, 固定高度)
+ *   │   聊天输入区(固定)  │ (flex-shrink: 0, 固定)
+ *   │   - 快捷问题        │
+ *   │   - 输入框+发送按钮  │
+ *   ├─────────────────────┤
+ *   │      协议栏         │ (flex-shrink: 0, 固定在底部)
  *   └─────────────────────┘
  * 
  * 全屏态布局：
@@ -29,11 +32,12 @@
  *   │       标题栏        │
  *   ├─────────────────────┤
  *   │                      │
- *   │   聊天区(全屏)      │ (flex: 1 1 auto, 填满剩余空间)
- *   │   覆盖信息区        │
+ *   │   聊天消息区(全屏)  │ (flex: 1 1 auto, 填满剩余空间)
  *   │                      │
  *   ├─────────────────────┤
- *   │      协议栏         │
+ *   │   聊天输入区(固定)  │ (flex-shrink: 0)
+ *   ├─────────────────────┤
+ *   │      协议栏         │ (flex-shrink: 0)
  *   └─────────────────────┘
  * 
  * CSS 变量说明：
@@ -103,17 +107,16 @@
 
 /* 信息区容器：收起态由内容撑开高度，全屏时折叠隐藏 */
 .runner-body {
-  flex: 0 0 auto;                    /* 不扩展，固定由内容决定高度 */
+  flex-shrink: 0;                    /* 不允许压缩 */
   min-height: 0;                    /* 最小高度为0 */
-  overflow: hidden;                  /* 隐藏溢出内容（可改为auto允许滚动） */
+  overflow: hidden;                  /* 隐藏溢出内容 */
   position: relative;               /* 相对定位 */
   z-index: var(--z-info);           /* 信息区层级 */
   max-height: none;                  /* 不限制最大高度 */
 }
 
 /* 全屏态：信息区完全折叠，释放空间给聊天区 */
-.runner-shell--chat-maximized .runner-body {
-  flex: 0 0 auto;                    /* 保持不扩展 */
+.runner-body--collapsed {
   max-height: 0 !important;          /* 最大高度设为0，隐藏内容 */
   min-height: 0 !important;         /* 最小高度为0 */
   height: 0 !important;              /* 高度强制为0 */
@@ -133,15 +136,16 @@
 }
 
 /* ========================================
-   聊天区容器样式
+   聊天消息区容器样式
    ======================================== */
 
-/* 聊天区容器
- * - 收起态：由内容撑开高度（flex: 0 0 auto）
- * - 全屏态：填充 header 和 footer 之间的所有空间（通过 JS 切换 flex 值）
+/* 聊天消息区容器
+ * - 填充信息区和输入区之间的剩余空间
+ * - 包含 header 和消息列表，不包含输入区
  */
 .runner-chat-dock {
-  flex: 0 0 auto;                    /* 不扩展，由内容决定高度 */
+  flex: 1 1 auto;                    /* 扩展占据所有剩余空间 */
+  min-height: 0;                     /* 最小高度为0 */
   overflow: hidden;                  /* 隐藏溢出内容 */
   z-index: var(--z-chat);           /* 聊天区层级 */
   display: flex;                     /* 启用 flex 布局 */
@@ -150,18 +154,16 @@
   background: #fff;                  /* 白色背景 */
   margin: 0;                         /* 无外边距 */
   padding: 0;                        /* 无内边距 */
-  align-self: stretch;                /* 拉伸到容器宽度 */
+  align-self: stretch;               /* 拉伸到容器宽度 */
 }
 
 /* ========================================
-   聊天区内容样式（收起态）
+   聊天消息区内容样式
    ======================================== */
 
-/* 聊天 section 容器（收起态）
- * 由内部内容撑开高度，不强制填充父容器
- */
+/* 聊天 section 容器 */
 .chat-section--mp {
-  flex: 0 0 auto;                    /* 不扩展，由内容决定高度 */
+  flex: 1 1 auto;                    /* 扩展占据所有剩余空间 */
   min-height: 0;                     /* 最小高度为0 */
   width: 100%;                       /* 宽度100% */
   display: flex;                     /* 启用 flex 布局 */
@@ -186,29 +188,11 @@
   overflow: hidden;                  /* 隐藏溢出内容 */
 }
 
-/* 聊天输入区 footer：固定高度，不压缩 */
-.runner-chat-dock .chat-input-footer {
-  flex-shrink: 0;                    /* 不允许压缩 */
-  position: relative;                /* 相对定位 */
-  z-index: 2;                        /* 在第2层级 */
-  background: #fff;                  /* 白色背景 */
-  margin: 0;                         /* 无外边距 */
-  padding: 0;                        /* 无内边距（收起态不需要safe-area） */
-  border-top: 1px solid var(--secondary-border);  /* 顶部边框 */
-}
-
 /* ========================================
    全屏态样式
    ======================================== */
 
-/* 全屏态：聊天区容器填充剩余空间 */
-.runner-shell--chat-maximized .runner-chat-dock {
-  flex: 1 1 auto;                    /* 扩展占据所有剩余空间 */
-  min-height: 0;                     /* 最小高度为0 */
-  overflow: hidden;                  /* 隐藏溢出内容 */
-}
-
-/* 全屏态：chat-section 填充整个 dock */
+/* 全屏态：chat-section 填充整个 dock，去掉圆角和阴影 */
 .runner-shell--chat-maximized .runner-chat-dock .chat-section--mp {
   flex: 1 1 auto;                    /* 扩展占据所有剩余空间 */
   min-height: 0;                     /* 最小高度为0 */
@@ -218,17 +202,81 @@
   border-top-color: transparent;     /* 顶部边框透明 */
 }
 
-/* 全屏态：chat-input-footer 需要底部安全区域 */
-.runner-shell--chat-maximized .runner-chat-dock .chat-input-footer {
-  padding-bottom: env(safe-area-inset-bottom);  /* 底部安全区域 */
-}
-
 /* 全屏态：chat-panel 样式 */
 .runner-shell--chat-maximized .runner-chat-panel {
   flex: 1 1 auto;                    /* 扩展占据所有剩余空间 */
   height: 100%;                      /* 高度100% */
   min-height: 0;                     /* 最小高度为0 */
   display: block;                    /* 块级显示 */
+}
+
+/* ========================================
+   聊天输入区（固定在协议栏上方）
+   ======================================== */
+
+/* 聊天输入区：固定在底部，位于协议栏上方 */
+.runner-chat-input-fixed {
+  flex-shrink: 0;                    /* 不允许压缩 */
+  background: #fff;                  /* 白色背景 */
+  border-top: 1px solid var(--secondary-border);  /* 顶部边框 */
+  padding: 12rpx 24rpx;             /* 内边距 */
+  box-sizing: border-box;            /* 盒模型：边框盒 */
+  z-index: var(--z-chat);           /* 聊天区层级 */
+}
+
+/* 输入行：flex 横向布局 */
+.runner-chat-input-row {
+  display: flex;                     /* 启用 flex 布局 */
+  align-items: center;              /* 垂直居中 */
+  gap: 16rpx;                        /* 间距 */
+}
+
+/* 输入框 */
+.runner-chat-input {
+  flex: 1;                           /* 占据剩余空间 */
+  height: 72rpx;                    /* 高度 */
+  background: var(--input-bg, #f1f5f9);  /* 背景色 */
+  border-radius: 36rpx;              /* 圆角 */
+  padding: 0 28rpx;                  /* 水平内边距 */
+  font-size: 28rpx;                  /* 字体大小 */
+  color: var(--primary-text);        /* 文字颜色 */
+  box-sizing: border-box;            /* 盒模型 */
+}
+
+/* 发送按钮 */
+.runner-chat-send-btn {
+  flex-shrink: 0;                    /* 不允许压缩 */
+  width: 120rpx;                     /* 宽度 */
+  height: 72rpx;                    /* 高度 */
+  background: var(--primary-color, #f97316);  /* 背景色 */
+  border-radius: 36rpx;              /* 圆角 */
+  display: flex;                     /* flex 居中 */
+  align-items: center;
+  justify-content: center;
+  color: #fff;                       /* 白色文字 */
+  font-size: 28rpx;                  /* 字体大小 */
+  font-weight: 600;                  /* 字体加粗 */
+}
+
+.runner-chat-send-btn.disabled {
+  opacity: 0.4;                      /* 禁用状态半透明 */
+}
+
+/* 快捷问题滚动区域 */
+.runner-chat-input-fixed .chat-prompts {
+  margin-bottom: 12rpx;              /* 底部间距 */
+  white-space: nowrap;               /* 不换行 */
+}
+
+.runner-chat-input-fixed .prompt-pill {
+  display: inline-block;
+  padding: 10rpx 24rpx;
+  background: var(--input-bg, #f1f5f9);
+  border-radius: 32rpx;
+  font-size: 24rpx;
+  color: var(--secondary-text);
+  margin-right: 12rpx;
+  white-space: nowrap;
 }
 
 /* ========================================
