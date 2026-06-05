@@ -106,35 +106,35 @@ const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? props.phase)
   text-align: center;
   padding: 48rpx 0;
   font-size: 26rpx;
-  color: #64748b;
+  color: var(--secondary-text, #64748b);
 }
 .muted {
   line-height: 1.5;
 }
 .err {
-  background: #fffbeb;
-  border: 1px solid #fde68a;
+  background: var(--verify-banner-bg, #fffbeb);
+  border: 1px solid var(--verify-banner-border, #fde68a);
   padding: 20rpx;
   border-radius: 12rpx;
-  color: #92400e;
+  color: var(--verify-banner-icon-color, #92400e);
   font-size: 26rpx;
 }
 .summary {
   font-size: 26rpx;
-  color: #475569;
+  color: var(--secondary-text, #475569);
   line-height: 1.6;
   margin-bottom: 20rpx;
   display: block;
 }
 .phase-hint {
   font-size: 22rpx;
-  color: #94a3b8;
+  color: var(--secondary-text, #94a3b8);
   margin-bottom: 16rpx;
   display: block;
 }
 .item {
   border: 1px solid var(--secondary-border);
-  background: #f8fafc;
+  background: var(--shuttle-item-bg, #f8fafc);
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
@@ -162,7 +162,7 @@ const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? props.phase)
 }
 .item-detail {
   font-size: 26rpx;
-  color: #64748b;
+  color: var(--secondary-text, #64748b);
   margin-top: 8rpx;
   display: block;
   line-height: 1.5;

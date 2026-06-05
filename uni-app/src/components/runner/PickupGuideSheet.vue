@@ -75,16 +75,16 @@ function openMap() {
   text-align: center;
   padding: 60rpx 0;
   font-size: 26rpx;
-  color: #94a3b8;
+  color: var(--secondary-text, #94a3b8);
 }
 .muted {
-  color: #64748b;
+  color: var(--secondary-text, #64748b);
   line-height: 1.5;
   padding: 0 16rpx;
 }
 .hero {
   background: var(--primary-surface);
-  border: 1px solid rgba(37, 99, 235, 0.2);
+  border: 1px solid var(--primary-border, rgba(37, 99, 235, 0.2));
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 24rpx;
@@ -102,7 +102,7 @@ function openMap() {
 .meta,
 .hours {
   font-size: 24rpx;
-  color: #64748b;
+  color: var(--secondary-text, #64748b);
   margin-top: 8rpx;
   display: block;
 }
@@ -118,7 +118,7 @@ function openMap() {
 }
 .hint {
   font-size: 24rpx;
-  color: #64748b;
+  color: var(--secondary-text, #64748b);
   margin-bottom: 24rpx;
   display: block;
 }

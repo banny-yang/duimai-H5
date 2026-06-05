@@ -43,9 +43,6 @@
     </scroll-view>
 
     <text class="picker-footer-hint">也可通过赛事二维码或链接直接进入</text>
-    <!-- #ifdef MP-WEIXIN -->
-    <text class="picker-footer-hint picker-api-hint">API 基址：{{ apiBase }}</text>
-    <!-- #endif -->
   </view>
 </template>
 

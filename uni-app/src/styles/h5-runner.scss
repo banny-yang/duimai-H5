@@ -129,7 +129,7 @@
   color: var(--primary-dark);
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
-  border: 1px solid rgba(255, 102, 0, 0.3);
+  border: 1px solid rgba(var(--primary-rgb), 0.3);
   background: var(--primary-surface);
 }
 
@@ -139,7 +139,7 @@
   gap: 8rpx;
   padding: 8rpx 20rpx;
   border-radius: 999rpx;
-  border: 1px solid rgba(255, 102, 0, 0.2);
+  border: 1px solid rgba(var(--primary-rgb), 0.2);
   background: var(--primary-surface);
   font-size: 22rpx;
   font-weight: 600;
@@ -162,8 +162,8 @@
   margin: 0;
   padding: 20rpx 24rpx;
   background: var(--primary-surface);
-  border-top: 1px solid rgba(255, 102, 0, 0.12);
-  border-bottom: 1px solid rgba(255, 102, 0, 0.12);
+  border-top: 1px solid rgba(var(--primary-rgb), 0.12);
+  border-bottom: 1px solid rgba(var(--primary-rgb), 0.12);
   pointer-events: none;
 }
 
@@ -185,7 +185,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: rgba(255, 102, 0, 0.15);
+  background: transparent;
   color: var(--primary-dark);
 }
 
@@ -256,8 +256,8 @@
   margin: 12rpx 24rpx 0;
   padding: 16rpx 20rpx;
   border-radius: 16rpx;
-  border: 1px solid #fde68a;
-  background: #fffbeb;
+  border: 1px solid var(--verify-banner-border, #fed7aa);
+  background: var(--verify-banner-bg, #fff4eb);
   text-align: left;
 }
 
@@ -265,8 +265,8 @@
   width: 64rpx;
   height: 64rpx;
   border-radius: 50%;
-  background: #fef3c7;
-  color: #b45309;
+  background: var(--verify-banner-icon-bg, #ffedd5);
+  color: var(--verify-banner-icon-color, #ea580c);
   font-size: 28rpx;
   font-weight: 700;
   display: flex;
@@ -278,12 +278,12 @@
 .identity-title {
   font-size: 24rpx;
   font-weight: 700;
-  color: #78350f;
+  color: var(--verify-banner-title-color, #78350f);
 }
 
 .identity-desc {
   font-size: 22rpx;
-  color: rgba(120, 53, 15, 0.9);
+  color: var(--verify-banner-desc-color, rgba(120, 53, 15, 0.85));
   margin-top: 4rpx;
 }
 
@@ -319,7 +319,7 @@
 }
 
 .shortcut-card:active {
-  border-color: rgba(255, 102, 0, 0.4);
+  border-color: rgba(var(--primary-rgb), 0.4);
   background: var(--primary-surface);
   box-shadow: var(--shadow-primary-sm);
   transform: translateY(2rpx);
@@ -335,18 +335,18 @@
 }
 
 .shortcut-icon.info {
-  background: #ffedd5;
-  color: #ea580c;
+  background: var(--shortcut-info-bg, #ffedd5);
+  color: var(--shortcut-info-color, #ea580c);
 }
 
 .shortcut-icon.map {
-  background: #dbeafe;
-  color: #2563eb;
+  background: var(--shortcut-map-bg, #dbeafe);
+  color: var(--shortcut-map-color, #2563eb);
 }
 
 .shortcut-icon.shuttle {
-  background: #d1fae5;
-  color: #059669;
+  background: var(--shortcut-shuttle-bg, #d1fae5);
+  color: var(--shortcut-shuttle-color, #059669);
 }
 
 .shortcut-label {
@@ -770,6 +770,112 @@
   font-size: 30rpx;
   color: var(--ink);
 }
+
+/* #ifndef MP-WEIXIN */
+/* ========== Markdown 格式化内容样式 (H5 only) ========== */
+/*
+ * 微信小程序 rich-text 不应用外部 CSS，渲染依赖 markdown-parser.js 的内联样式。
+ * 以下样式仅在 H5 端生效，作为内联样式的增强层，支持 CSS 变量和 rpx 单位。
+ */
+
+.ai-bubble .md-content,
+.staff-bubble .md-content {
+  font-size: 30rpx;
+  line-height: 1.6;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.ai-bubble .md-content p,
+.staff-bubble .md-content p {
+  margin: 0 0 12rpx 0;
+}
+.ai-bubble .md-content p:last-child,
+.staff-bubble .md-content p:last-child {
+  margin-bottom: 0;
+}
+
+.ai-bubble .md-content h1,
+.staff-bubble .md-content h1 { font-size: 36rpx; margin: 16rpx 0 8rpx 0; font-weight: 600; }
+.ai-bubble .md-content h2,
+.staff-bubble .md-content h2 { font-size: 34rpx; margin: 16rpx 0 8rpx 0; font-weight: 600; }
+.ai-bubble .md-content h3,
+.staff-bubble .md-content h3 { font-size: 32rpx; margin: 14rpx 0 6rpx 0; font-weight: 600; }
+
+.ai-bubble .md-content strong,
+.staff-bubble .md-content strong {
+  font-weight: 600;
+}
+.ai-bubble .md-content em,
+.staff-bubble .md-content em {
+  font-style: italic;
+}
+.ai-bubble .md-content del,
+.staff-bubble .md-content del {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.ai-bubble .md-content code,
+.staff-bubble .md-content code {
+  padding: 2rpx 8rpx;
+  font-size: 26rpx;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 6rpx;
+  color: #e65100;
+}
+
+.ai-bubble .md-content pre,
+.staff-bubble .md-content pre {
+  margin: 12rpx 0;
+  padding: 16rpx 20rpx;
+  background: #1e1e1e;
+  border-radius: 12rpx;
+}
+.ai-bubble .md-content pre code,
+.staff-bubble .md-content pre code {
+  color: #d4d4d4;
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+
+.ai-bubble .md-content ul,
+.ai-bubble .md-content ol,
+.staff-bubble .md-content ul,
+.staff-bubble .md-content ol {
+  margin: 8rpx 0;
+  padding-left: 36rpx;
+}
+.ai-bubble .md-content li,
+.staff-bubble .md-content li {
+  margin-bottom: 4rpx;
+}
+
+.ai-bubble .md-content p + hr,
+.staff-bubble .md-content p + hr,
+.ai-bubble .md-content ul + hr,
+.staff-bubble .md-content ul + hr,
+.ai-bubble .md-content ol + hr,
+.staff-bubble .md-content ol + hr {
+  margin: 16rpx 0;
+}
+
+.ai-bubble .md-content a,
+.staff-bubble .md-content a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.ai-bubble .md-content blockquote,
+.staff-bubble .md-content blockquote {
+  margin: 12rpx 0;
+  padding: 8rpx 16rpx;
+  border-left: 4rpx solid var(--primary);
+  background: rgba(var(--primary-rgb), 0.04);
+  border-radius: 0 8rpx 8rpx 0;
+  color: var(--secondary-text);
+}
+/* #endif */
 
 .chat-row-assistant {
   display: flex;

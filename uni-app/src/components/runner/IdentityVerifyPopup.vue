@@ -172,7 +172,7 @@ async function submit() {
 }
 .form-field--focus .field-input {
   border-color: var(--primary);
-  box-shadow: 0 0 0 6rpx rgba(255, 102, 0, 0.12);
+  box-shadow: 0 0 0 6rpx var(--primary-focus-ring, rgba(255, 102, 0, 0.12));
 }
 .field-input {
   width: 100%;
@@ -193,9 +193,9 @@ async function submit() {
 }
 .form-error {
   font-size: 26rpx;
-  color: #b45309;
-  background: #fffbeb;
-  border: 1px solid #fde68a;
+  color: var(--verify-banner-icon-color, #b45309);
+  background: var(--verify-banner-bg, #fffbeb);
+  border: 1px solid var(--verify-banner-border, #fde68a);
   border-radius: 16rpx;
   padding: 20rpx 24rpx;
   line-height: 1.45;
@@ -208,9 +208,12 @@ async function submit() {
   border-radius: 24rpx;
   font-size: 32rpx;
   font-weight: 700;
-  color: #fff;
+  color: var(--verify-submit-text, #fff);
   background: var(--primary);
   box-shadow: var(--shadow-primary-sm);
+}
+.verify-submit:active {
+  background: var(--primary-dark);
 }
 .verify-submit.loading,
 .verify-submit[disabled] {
@@ -226,7 +229,7 @@ async function submit() {
 
 <style>
 .field-ph {
-  color: #9ca3af;
+  color: var(--secondary-text, #9ca3af);
   font-size: 30rpx;
 }
 </style>

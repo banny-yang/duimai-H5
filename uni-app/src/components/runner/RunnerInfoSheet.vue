@@ -83,7 +83,7 @@ const displayRows = computed(() => {
 }
 .hero {
   background: var(--primary-surface);
-  border: 1px solid rgba(37, 99, 235, 0.2);
+  border: 1px solid var(--primary-border, rgba(37, 99, 235, 0.2));
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 24rpx;
