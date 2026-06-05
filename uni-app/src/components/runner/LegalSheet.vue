@@ -1,20 +1,13 @@
 <template>
-  <view v-if="show" class="full">
-    <view class="header">
-      <view class="titles">
-        <text class="title">{{ doc?.title || '加载中…' }}</text>
-        <text v-if="doc?.version" class="ver">版本 {{ doc.version }}</text>
-      </view>
-      <text class="close" @tap="$emit('close')">关闭</text>
-    </view>
-    <scroll-view class="body" scroll-y>
-      <text class="content">{{ doc?.content || '' }}</text>
-    </scroll-view>
-  </view>
+  <SheetModal :show="show" :title="doc?.title || '加载中…'" @close="$emit('close')">
+    <text v-if="doc?.version" class="ver">版本 {{ doc.version }}</text>
+    <text class="content">{{ doc?.content || '' }}</text>
+  </SheetModal>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
+import SheetModal from './SheetModal.vue'
 import { fetchLegalDoc } from '@/utils/runner-api.js'
 
 const props = defineProps({
@@ -44,39 +37,11 @@ watch(
 </script>
 
 <style scoped>
-.full {
-  position: fixed;
-  inset: 0;
-  z-index: 400;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-}
-.header {
-  display: flex;
-  justify-content: space-between;
-  padding: 24rpx 32rpx;
-  border-bottom: 1px solid #e2e8f0;
-}
-.title {
-  font-size: 32rpx;
-  font-weight: 700;
-}
 .ver {
   font-size: 22rpx;
-  color: #64748b;
-  margin-top: 4rpx;
+  color: var(--secondary-text, #64748b);
+  margin-bottom: 16rpx;
   display: block;
-}
-.close {
-  color: var(--primary);
-  font-size: 28rpx;
-}
-.body {
-  flex: 1;
-  padding: 32rpx;
 }
 .content {
   font-size: 28rpx;
