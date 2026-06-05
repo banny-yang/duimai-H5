@@ -52,7 +52,9 @@
     "appid": "",
     "libVersion": "3.14.6",
     "setting": {
-      "urlCheck": false
+      "urlCheck": false,
+      "ignoreDevUnusedFiles": false,
+      "ignoreUploadUnusedFiles": false
     },
     "permission": {
       "scope.record": {

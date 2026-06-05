@@ -65,14 +65,14 @@
           v-for="(p, i) in prompts"
           :key="i"
           class="prompt-pill"
-          :class="{ disabled: thinking || !chatEnabled }"
+          :class="{ disabled: chatInputDisabled }"
           @tap="onPrompt(p)"
         >
           {{ p }}
         </text>
       </scroll-view>
       <ChatInput
-        :disabled="thinking || !chatEnabled"
+        :disabled="chatInputDisabled"
         :locale="locale"
         @send-text="sendTextMessage"
         @voice-file="onVoiceFile"
@@ -103,6 +103,7 @@ import {
 import { formatApiErrorMessage } from '@/utils/api.js'
 import { t } from '@/utils/i18n.js'
 import { isMpWeixinPlatform } from '@/utils/mp-layout.js'
+import { clampVoiceDurationMs } from '@/utils/voice-message.js'
 
 const props = defineProps({
   phase: { type: String, default: 'pre' },
@@ -161,7 +162,20 @@ watch(
   },
 )
 
-defineExpose({ remeasure: () => {}, sendTextMessage, onPrompt })
+const transcribing = ref(false)
+
+const chatInputDisabled = computed(
+  () => thinking.value || transcribing.value || !props.chatEnabled,
+)
+
+defineExpose({
+  remeasure: () => {},
+  sendTextMessage,
+  onPrompt,
+  onVoiceFile,
+  thinking,
+  chatInputDisabled,
+})
 
 const prompts = computed(() =>
   resolveQuickPrompts(props.phase, props.h5QuickQuestions),
@@ -278,6 +292,10 @@ async function appendReply(answer) {
   await streamText(streamId, fullText)
 }
 
+/**
+ * 与 H5 ChatPanel.sendQueryToAi 一致：将文字发往 POST /runner/chat
+ * 语音路径在 speech-to-text 拿到 text 后调用本函数（可带 inputSource / voiceDurationMs）
+ */
 async function sendQueryToAi(text, voiceMeta) {
   if (thinking.value) return
   if (!props.chatEnabled) {
@@ -316,14 +334,21 @@ async function sendQueryToAi(text, voiceMeta) {
 }
 
 async function sendTextMessage(text) {
-  if (thinking.value) return
+  if (thinking.value || transcribing.value) return
   messages.value.push({ id: uid(), role: 'user', text, createdAt: Date.now() })
   scrollBottom()
   await sendQueryToAi(text)
 }
 
-async function onVoiceFile({ filePath, blob, durationMs }) {
-  if (thinking.value || !props.chatEnabled) return
+/**
+ * 与 H5 handleVoiceMessage 一致：
+ * 1. POST /runner/chat/speech-to-text 语音转文字
+ * 2. POST /runner/chat 将转写文字发给 AI
+ */
+async function onVoiceFile({ filePath, blob, durationMs: rawDurationMs }) {
+  if (thinking.value || transcribing.value || !props.chatEnabled) return
+
+  const durationMs = clampVoiceDurationMs(rawDurationMs)
   const msgId = uid()
   messages.value.push({
     id: msgId,
@@ -332,7 +357,9 @@ async function onVoiceFile({ filePath, blob, durationMs }) {
     createdAt: Date.now(),
   })
   scrollBottom()
-  thinking.value = true
+  transcribing.value = true
+  chatError.value = null
+
   try {
     const res = await transcribeSpeech(blob || filePath)
     const text = res.text?.trim()
@@ -340,27 +367,35 @@ async function onVoiceFile({ filePath, blob, durationMs }) {
       messages.value = messages.value.map((m) =>
         m.id === msgId ? { ...m, voiceStatus: 'failed' } : m,
       )
-      chatError.value = '未识别到有效语音'
+      chatError.value = '未识别到有效语音，请重试'
       return
     }
+
     messages.value = messages.value.map((m) =>
       m.id === msgId
-        ? { ...m, voiceStatus: 'done', text, inputSource: 'voice' }
+        ? {
+            ...m,
+            voiceStatus: 'done',
+            text,
+            inputSource: 'voice',
+          }
         : m,
     )
-    await sendQueryToAi(text, { durationMs: durationMs || res.durationMs })
+    scrollBottom()
+
+    await sendQueryToAi(text, { durationMs })
   } catch (e) {
     messages.value = messages.value.map((m) =>
       m.id === msgId ? { ...m, voiceStatus: 'failed' } : m,
     )
     chatError.value = formatApiErrorMessage(e, '语音识别失败')
   } finally {
-    thinking.value = false
+    transcribing.value = false
   }
 }
 
 function onPrompt(p) {
-  if (thinking.value || !props.chatEnabled) return
+  if (chatInputDisabled.value) return
   sendTextMessage(p)
 }
 

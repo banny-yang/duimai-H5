@@ -53,6 +53,17 @@
 
 /* #ifdef MP-WEIXIN */
 
+.iconfont-preload {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ========================================
    根容器样式
    ======================================== */
@@ -225,42 +236,9 @@
   z-index: var(--z-chat);           /* 聊天区层级 */
 }
 
-/* 输入行：flex 横向布局 */
-.runner-chat-input-row {
-  display: flex;                     /* 启用 flex 布局 */
-  align-items: center;              /* 垂直居中 */
-  gap: 16rpx;                        /* 间距 */
-}
-
-/* 输入框 */
-.runner-chat-input {
-  flex: 1;                           /* 占据剩余空间 */
-  height: 72rpx;                    /* 高度 */
-  background: var(--input-bg, #f1f5f9);  /* 背景色 */
-  border-radius: 36rpx;              /* 圆角 */
-  padding: 0 28rpx;                  /* 水平内边距 */
-  font-size: 28rpx;                  /* 字体大小 */
-  color: var(--primary-text);        /* 文字颜色 */
-  box-sizing: border-box;            /* 盒模型 */
-}
-
-/* 发送按钮 */
-.runner-chat-send-btn {
-  flex-shrink: 0;                    /* 不允许压缩 */
-  width: 120rpx;                     /* 宽度 */
-  height: 72rpx;                    /* 高度 */
-  background: var(--primary-color, #f97316);  /* 背景色 */
-  border-radius: 36rpx;              /* 圆角 */
-  display: flex;                     /* flex 居中 */
-  align-items: center;
-  justify-content: center;
-  color: #fff;                       /* 白色文字 */
-  font-size: 28rpx;                  /* 字体大小 */
-  font-weight: 600;                  /* 字体加粗 */
-}
-
-.runner-chat-send-btn.disabled {
-  opacity: 0.4;                      /* 禁用状态半透明 */
+/* ChatInput 已含麦克风/发送，避免与外层 padding 叠加重复 */
+.runner-chat-input-fixed .runner-mp-chat-input :deep(.chat-input-wrap) {
+  padding: 0;
 }
 
 /* 快捷问题滚动区域 */

@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "unh dev h5",
     "dev:h5": "unh dev h5",
-    "dev:mp-weixin": "unh dev mp-weixin",
+    "clean:mp": "node -e \"import('node:fs').then(fs=>{try{fs.rmSync('dist',{recursive:true,force:true})}catch(e){}})\"",
+    "dev:mp-weixin": "npm run clean:mp && unh dev mp-weixin",
     "build": "unh build h5",
     "build:h5": "unh build h5",
-    "build:mp-weixin": "unh build mp-weixin",
+    "build:mp-weixin": "npm run clean:mp && unh build mp-weixin",
     "about": "unh info"
   },
   "dependencies": {

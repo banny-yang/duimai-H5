@@ -238,6 +238,8 @@ npm run build:mp-weixin
 
 - **地图**：H5 使用高德 web-view（与 React 一致）；小程序/App 使用原生 `<map>`。
 
+- **图标**：H5 使用内联 `<svg>`；**微信小程序不支持 SVG**。小程序使用 **iconfont 字体**（`utils/iconfont-text.js` + `docs/iconfont.md`，字体来自 [iconfont.cn](https://www.iconfont.cn/)），H5 仍保留 SVG。
+
 
 
 React 源码保留在 `duimai-h5/src/`，Web 部署不受影响。

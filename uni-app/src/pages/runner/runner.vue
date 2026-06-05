@@ -112,28 +112,19 @@
               v-for="(p, i) in (h5QuickQuestions[phase] || h5QuickQuestions.default || [])"
               :key="i"
               class="prompt-pill"
-              @tap="chatPanelRef && chatPanelRef.onPrompt && chatPanelRef.onPrompt(p)"
+              :class="{ disabled: chatPanelRef?.chatInputDisabled }"
+              @tap="!chatPanelRef?.chatInputDisabled && chatPanelRef?.onPrompt?.(p)"
             >
               {{ p }}
             </text>
           </scroll-view>
-          <view class="runner-chat-input-row">
-            <input
-              class="runner-chat-input"
-              v-model="mpInputText"
-              :placeholder="t(locale, 'sendPlaceholder')"
-              :disabled="!chatEnabled"
-              confirm-type="send"
-              @confirm="onMpSendText"
-            />
-            <view
-              class="runner-chat-send-btn"
-              :class="{ disabled: !mpInputText.trim() || !chatEnabled }"
-              @tap="onMpSendText"
-            >
-              <text>发送</text>
-            </view>
-          </view>
+          <ChatInput
+            class="runner-mp-chat-input"
+            :disabled="chatPanelRef?.chatInputDisabled ?? !chatEnabled"
+            :locale="locale"
+            @send-text="onMpChatSendText"
+            @voice-file="onMpChatVoiceFile"
+          />
         </view>
       </template>
 
@@ -249,6 +240,14 @@
 
     <!-- 法律声明弹窗（隐私政策、用户协议） -->
     <LegalSheet :show="legal != null" :type="legal || 'privacy'" @close="legal = null" />
+
+    <!-- #ifdef MP-WEIXIN -->
+    <text
+      class="iconfont iconfont-glyph iconfont-preload"
+      :style="mpIconPreloadStyle"
+      aria-hidden="true"
+    >{{ mpIconPreloadGlyph }}</text>
+    <!-- #endif -->
   </view>
 </template>
 
@@ -266,6 +265,7 @@ import ConnectionError from '@/components/runner/ConnectionError.vue'
 import PhaseBadge from '@/components/runner/PhaseBadge.vue'
 import RunnerTopSection from '@/components/runner/RunnerTopSection.vue'
 import ChatPanel from '@/components/runner/ChatPanel.vue'
+import ChatInput from '@/components/runner/ChatInput.vue'
 import SosFloatingButton from '@/components/runner/SosFloatingButton.vue'
 import ChatFooter from '@/components/runner/ChatFooter.vue'
 import IdentityVerifyPopup from '@/components/runner/IdentityVerifyPopup.vue'
@@ -275,6 +275,9 @@ import RunnerInfoSheet from '@/components/runner/RunnerInfoSheet.vue'
 import RouteMapSheet from '@/components/runner/RouteMapSheet.vue'
 import ShuttleSheet from '@/components/runner/ShuttleSheet.vue'
 import LegalSheet from '@/components/runner/LegalSheet.vue'
+// #ifdef MP-WEIXIN
+import { getIconGlyph, iconfontStyle } from '@/utils/iconfont-text.js'
+// #endif
 
 /**
  * ========================================
@@ -284,6 +287,11 @@ import LegalSheet from '@/components/runner/LegalSheet.vue'
 
 // 检测是否为微信小程序环境
 const isMp = isMpWeixinPlatform()
+
+// #ifdef MP-WEIXIN
+const mpIconPreloadGlyph = getIconGlyph('mic')
+const mpIconPreloadStyle = iconfontStyle('1px', 'transparent')
+// #endif
 
 // URL 参数
 const eventGuidParam = ref('')          // 赛事 GUID（从 URL 获取）
@@ -361,7 +369,6 @@ const pickupOpen = ref(false)   // 接驳指引弹窗
 // 聊天状态
 const chatMaximized = ref(false)  // 聊天面板是否全屏
 const chatPanelRef = ref(null)     // 聊天面板组件引用
-const mpInputText = ref('')        // 小程序输入框文本
 
 // SOS 提示
 const sosToast = ref(null)  // 临时显示的提示信息
@@ -544,18 +551,12 @@ function onRunnerUpdate(r) {
   runner.value = r
 }
 
-/**
- * 小程序环境发送文本消息
- * 调用 ChatPanel 的 sendTextMessage 方法
- */
-function onMpSendText() {
-  const text = mpInputText.value.trim()
-  if (!text || !chatEnabled.value) return
-  mpInputText.value = ''
-  // 通过 chatPanelRef 调用 ChatPanel 内部的 sendTextMessage
-  if (chatPanelRef.value && typeof chatPanelRef.value.sendTextMessage === 'function') {
-    chatPanelRef.value.sendTextMessage(text)
-  }
+function onMpChatSendText(text) {
+  chatPanelRef.value?.sendTextMessage?.(text)
+}
+
+function onMpChatVoiceFile(payload) {
+  chatPanelRef.value?.onVoiceFile?.(payload)
 }
 
 /**

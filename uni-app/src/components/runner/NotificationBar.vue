@@ -1,9 +1,19 @@
 <template>
   <view v-if="marqueeText" class="notice-bar" :class="{ emergency: isEmergency }">
     <view class="notice-icon">
+      <!-- #ifdef H5 -->
       <svg class="mega-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d="M11 5L6 9H3a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h3l5 4V5zm2.5 1.5a6.5 6.5 0 0 1 0 11 1 1 0 0 0 .2 1.4 1 1 0 0 0 1.4-.2 8.5 8.5 0 0 0 0-13.2 1 1 0 0 0-1.4.2 1 1 0 0 0 .2 1.4z" />
       </svg>
+      <!-- #endif -->
+      <!-- #ifdef MP-WEIXIN -->
+      <text class="iconfont iconfont-glyph mega-icon" :style="iconfontStyle('28rpx')">{{ megaphoneGlyph }}</text>
+      <!-- #endif -->
+      <!-- #ifndef H5 || MP-WEIXIN -->
+      <svg class="mega-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M11 5L6 9H3a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h3l5 4V5zm2.5 1.5a6.5 6.5 0 0 1 0 11 1 1 0 0 0 .2 1.4 1 1 0 0 0 1.4-.2 8.5 8.5 0 0 0 0-13.2 1 1 0 0 0-1.4.2 1 1 0 0 0 .2 1.4z" />
+      </svg>
+      <!-- #endif -->
     </view>
     <view class="notice-marquee-mask">
       <NoticeMarquee
@@ -19,6 +29,9 @@
 <script setup>
 import { computed } from 'vue'
 import NoticeMarquee from './NoticeMarquee.vue'
+import { getIconGlyph, iconfontStyle } from '@/utils/iconfont-text.js'
+
+const megaphoneGlyph = getIconGlyph('megaphone')
 
 const props = defineProps({
   event: { type: Object, required: true },
@@ -47,4 +60,5 @@ const fadeColor = computed(() => (isEmergency.value ? '#ffffff' : '#fff4eb'))
   max-width: 100%;
   overflow: hidden;
 }
+
 </style>

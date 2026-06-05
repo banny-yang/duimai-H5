@@ -42,11 +42,11 @@
 
     <view v-else class="text-row">
       <view
-        v-if="voiceSupported"
+        v-if="showMicButton"
         class="icon-tap"
-        :class="{ 'icon-tap--disabled': disabled }"
+        :class="{ 'icon-tap--disabled': disabled || !voiceSupported }"
         aria-label="切换到语音输入"
-        @tap="!disabled && enterVoiceMode()"
+        @tap="onMicTap"
       >
         <MicIcon />
       </view>
@@ -75,9 +75,22 @@
         :disabled="disabled || !text.trim()"
         @tap="sendText"
       >
+        <!-- #ifdef H5 -->
         <svg class="send-svg" viewBox="0 0 24 24" fill="currentColor">
           <path d="M3.4 20.6 20.6 12 3.4 3.4l2.8 7.2L16 12l-9.8 1.4-2.8 7.2z" />
         </svg>
+        <!-- #endif -->
+        <!-- #ifdef MP-WEIXIN -->
+        <text
+          class="iconfont iconfont-glyph send-iconfont"
+          :style="sendIconStyle"
+        >{{ sendGlyph }}</text>
+        <!-- #endif -->
+        <!-- #ifndef H5 || MP-WEIXIN -->
+        <svg class="send-svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M3.4 20.6 20.6 12 3.4 3.4l2.8 7.2L16 12l-9.8 1.4-2.8 7.2z" />
+        </svg>
+        <!-- #endif -->
         <text class="send-label">发送</text>
       </button>
     </view>
@@ -90,8 +103,10 @@ import MicIcon from '@/components/icons/MicIcon.vue'
 import KeyboardIcon from '@/components/icons/KeyboardIcon.vue'
 import { fetchSpeechToTextStatus } from '@/utils/runner-api.js'
 import { isVoiceInputSupported, voiceUnsupportedHint } from '@/utils/voice-capability.js'
-import { clampVoiceDurationMs } from '@/utils/voice-message.js'
+import { clampVoiceDurationMs, VOICE_MIN_RECORD_MS } from '@/utils/voice-message.js'
 import { t } from '@/utils/i18n.js'
+import { isMpWeixinPlatform } from '@/utils/mp-layout.js'
+import { getIconGlyph, iconfontStyle } from '@/utils/iconfont-text.js'
 
 // #ifdef H5
 import { useVoiceRecorderH5 } from '@/composables/useVoiceRecorderH5.js'
@@ -110,6 +125,15 @@ const voiceHint = ref('')
 const voiceError = ref(null)
 const inputFocused = ref(false)
 const placeholder = t(props.locale, 'sendPlaceholder')
+const isMp = isMpWeixinPlatform()
+const showMicButton = computed(() => isMp || voiceSupported.value)
+
+const sendGlyph = computed(() =>
+  getIconGlyph(text.value.trim() ? 'send-fill' : 'send'),
+)
+const sendIconStyle = computed(() =>
+  iconfontStyle('32rpx', text.value.trim() ? '#fff' : ''),
+)
 
 // #ifdef H5
 const h5Voice = useVoiceRecorderH5()
@@ -122,6 +146,8 @@ const isRecording = computed(() => recording.value)
 const progressMs = ref(0)
 let progressTimer = null
 let mpRecorder = null
+let suppressVoiceEmit = false
+let recordStartedAt = 0
 // #endif
 
 const recordProgressPct = computed(() => {
@@ -171,9 +197,24 @@ onMounted(async () => {
     mpRecorder = uni.getRecorderManager()
     mpRecorder.onStop((res) => {
       recording.value = false
-      if (res.tempFilePath) {
-        emit('voice-file', { filePath: res.tempFilePath, durationMs: res.duration || 0 })
+      if (suppressVoiceEmit) {
+        suppressVoiceEmit = false
+        return
       }
+      if (!res.tempFilePath) return
+      const elapsed = Math.max(0, Date.now() - recordStartedAt)
+      let rawDuration = res.duration || elapsed
+      // 少数基础库把 duration 当成秒
+      if (rawDuration > 0 && rawDuration < 1000 && elapsed >= 1000) {
+        rawDuration *= 1000
+      }
+      if (!rawDuration || rawDuration < VOICE_MIN_RECORD_MS) rawDuration = elapsed
+      const durationMs = clampVoiceDurationMs(rawDuration)
+      if (durationMs < VOICE_MIN_RECORD_MS) {
+        voiceError.value = '说话时间太短，请按住至少 0.5 秒'
+        return
+      }
+      emit('voice-file', { filePath: res.tempFilePath, durationMs })
     })
     mpRecorder.onError(() => {
       recording.value = false
@@ -209,6 +250,16 @@ function sendText() {
   emit('send-text', v)
 }
 
+function onMicTap() {
+  if (props.disabled) return
+  if (!voiceSupported.value) {
+    const hint = voiceHint.value || voiceUnsupportedHint()
+    if (hint) uni.showToast({ title: hint, icon: 'none' })
+    return
+  }
+  enterVoiceMode()
+}
+
 function enterVoiceMode() {
   if (props.disabled || !voiceSupported.value) return
   voiceError.value = null
@@ -220,18 +271,60 @@ function exitVoiceMode() {
   if (isRecording.value) h5Voice.cancel()
   // #endif
   // #ifndef H5
-  if (recording.value && mpRecorder) {
-    recording.value = false
-    try {
-      mpRecorder.stop()
-    } catch {
-      /* ignore */
-    }
-  }
+  discardMpRecording()
   // #endif
   voiceMode.value = false
   voiceError.value = null
 }
+
+// #ifndef H5
+function discardMpRecording() {
+  if (!recording.value || !mpRecorder) return
+  suppressVoiceEmit = true
+  recording.value = false
+  try {
+    mpRecorder.stop()
+  } catch {
+    suppressVoiceEmit = false
+  }
+}
+
+function ensureRecordPermission() {
+  return new Promise((resolve) => {
+    uni.getSetting({
+      success: ({ authSetting }) => {
+        if (authSetting['scope.record']) {
+          resolve(true)
+          return
+        }
+        uni.authorize({
+          scope: 'scope.record',
+          success: () => resolve(true),
+          fail: () => {
+            uni.showModal({
+              title: '需要录音权限',
+              content: '语音输入需使用麦克风，请在设置中开启录音权限',
+              confirmText: '去设置',
+              success: (modalRes) => {
+                if (!modalRes.confirm) {
+                  resolve(false)
+                  return
+                }
+                uni.openSetting({
+                  success: (settingRes) =>
+                    resolve(!!settingRes.authSetting['scope.record']),
+                  fail: () => resolve(false),
+                })
+              },
+            })
+          },
+        })
+      },
+      fail: () => resolve(false),
+    })
+  })
+}
+// #endif
 
 async function onHoldStart() {
   if (props.disabled || isRecording.value) return
@@ -251,8 +344,19 @@ async function onHoldStart() {
 
   // #ifndef H5
   if (!mpRecorder) return
+  const allowed = await ensureRecordPermission()
+  if (!allowed) {
+    voiceError.value = '请允许使用麦克风'
+    return
+  }
+  recordStartedAt = Date.now()
   recording.value = true
-  mpRecorder.start({ format: 'mp3', duration: 60000 })
+  mpRecorder.start({
+    format: 'mp3',
+    duration: 60000,
+    sampleRate: 16000,
+    numberOfChannels: 1,
+  })
   // #endif
 }
 
@@ -279,14 +383,7 @@ function onHoldCancel() {
   if (isRecording.value) h5Voice.cancel()
   // #endif
   // #ifndef H5
-  if (recording.value && mpRecorder) {
-    recording.value = false
-    try {
-      mpRecorder.stop()
-    } catch {
-      /* ignore */
-    }
-  }
+  discardMpRecording()
   // #endif
 }
 </script>
@@ -395,6 +492,11 @@ function onHoldCancel() {
   width: 32rpx;
   height: 32rpx;
 }
+/* #ifdef MP-WEIXIN */
+.send-iconfont {
+  flex-shrink: 0;
+}
+/* #endif */
 .send-label {
   font-size: 28rpx;
 }

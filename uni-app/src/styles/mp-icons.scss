@@ -1,0 +1,243 @@
+/**
+ * 微信小程序不支持内联 SVG，用 view + 边框绘制图标（继承父级 color）
+ */
+.mp-icon {
+  position: relative;
+  flex-shrink: 0;
+  color: inherit;
+  box-sizing: border-box;
+}
+
+/* ---------- 金刚区 ---------- */
+.mp-icon--shortcut-info {
+  width: 36rpx;
+  height: 26rpx;
+  border: 3rpx solid currentColor;
+  border-radius: 6rpx;
+}
+
+.mp-icon--shortcut-info::before,
+.mp-icon--shortcut-info::after {
+  content: '';
+  position: absolute;
+  top: -10rpx;
+  width: 10rpx;
+  height: 10rpx;
+  border: 3rpx solid currentColor;
+  border-bottom: none;
+  border-radius: 4rpx 4rpx 0 0;
+}
+
+.mp-icon--shortcut-info::before {
+  left: 6rpx;
+}
+
+.mp-icon--shortcut-info::after {
+  right: 6rpx;
+}
+
+.mp-icon--shortcut-map {
+  width: 36rpx;
+  height: 30rpx;
+}
+
+.mp-icon--shortcut-map .mp-map-left,
+.mp-icon--shortcut-map .mp-map-right {
+  position: absolute;
+  top: 0;
+  width: 16rpx;
+  height: 100%;
+  border: 3rpx solid currentColor;
+  border-radius: 4rpx;
+}
+
+.mp-icon--shortcut-map .mp-map-left {
+  left: 0;
+  transform: skewY(-6deg);
+}
+
+.mp-icon--shortcut-map .mp-map-right {
+  right: 0;
+  transform: skewY(6deg);
+}
+
+.mp-icon--shortcut-map .mp-map-fold {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 3rpx;
+  height: 100%;
+  margin-left: -1.5rpx;
+  background: currentColor;
+}
+
+.mp-icon--shortcut-shuttle {
+  width: 38rpx;
+  height: 28rpx;
+}
+
+.mp-icon--shortcut-shuttle .mp-bus-body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 18rpx;
+  border: 3rpx solid currentColor;
+  border-radius: 6rpx 6rpx 4rpx 4rpx;
+}
+
+.mp-icon--shortcut-shuttle .mp-bus-wheel {
+  position: absolute;
+  bottom: 0;
+  width: 10rpx;
+  height: 10rpx;
+  border: 3rpx solid currentColor;
+  border-radius: 50%;
+}
+
+.mp-icon--shortcut-shuttle .mp-bus-wheel--l {
+  left: 6rpx;
+}
+
+.mp-icon--shortcut-shuttle .mp-bus-wheel--r {
+  right: 6rpx;
+}
+
+/* ---------- 麦克风 ---------- */
+.mp-icon--mic {
+  width: 28rpx;
+  height: 40rpx;
+}
+
+.mp-icon--mic .mp-mic-head {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 16rpx;
+  height: 24rpx;
+  margin-left: -8rpx;
+  border: 3rpx solid currentColor;
+  border-radius: 999rpx;
+}
+
+.mp-icon--mic .mp-mic-stem {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 3rpx;
+  height: 12rpx;
+  margin-left: -1.5rpx;
+  background: currentColor;
+}
+
+.mp-icon--mic .mp-mic-arc {
+  position: absolute;
+  left: 50%;
+  bottom: 8rpx;
+  width: 24rpx;
+  height: 12rpx;
+  margin-left: -12rpx;
+  border: 3rpx solid currentColor;
+  border-top: none;
+  border-radius: 0 0 12rpx 12rpx;
+}
+
+/* ---------- 键盘 ---------- */
+.mp-icon--keyboard {
+  width: 40rpx;
+  height: 30rpx;
+}
+
+.mp-icon--keyboard .mp-kb-frame {
+  width: 100%;
+  height: 100%;
+  border: 3rpx solid currentColor;
+  border-radius: 6rpx;
+  padding: 6rpx 5rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.mp-icon--keyboard .mp-kb-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 4rpx;
+}
+
+.mp-icon--keyboard .mp-kb-dot {
+  width: 6rpx;
+  height: 3rpx;
+  border-radius: 2rpx;
+  background: currentColor;
+}
+
+.mp-icon--keyboard .mp-kb-dot--wide {
+  width: 14rpx;
+}
+
+/* ---------- 用户头像 ---------- */
+.mp-icon--user {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.mp-icon--user .mp-user-head {
+  position: absolute;
+  left: 50%;
+  top: 2rpx;
+  width: 14rpx;
+  height: 14rpx;
+  margin-left: -7rpx;
+  border: 3rpx solid currentColor;
+  border-radius: 50%;
+}
+
+.mp-icon--user .mp-user-body {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 24rpx;
+  height: 12rpx;
+  margin-left: -12rpx;
+  border: 3rpx solid currentColor;
+  border-top: none;
+  border-radius: 0 0 12rpx 12rpx;
+}
+
+/* ---------- 喇叭（通知条） ---------- */
+.mp-icon--megaphone {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+.mp-icon--megaphone .mp-mega-body {
+  position: absolute;
+  left: 0;
+  top: 8rpx;
+  width: 0;
+  height: 0;
+  border-top: 6rpx solid transparent;
+  border-bottom: 10rpx solid transparent;
+  border-right: 14rpx solid currentColor;
+}
+
+.mp-icon--megaphone .mp-mega-wave {
+  position: absolute;
+  right: 0;
+  top: 6rpx;
+  width: 10rpx;
+  height: 16rpx;
+  border: 3rpx solid currentColor;
+  border-left: none;
+  border-radius: 0 10rpx 10rpx 0;
+}
+
+/* ---------- 发送（纸飞机简化为三角） ---------- */
+.mp-icon--send {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 10rpx 0 10rpx 18rpx;
+  border-color: transparent transparent transparent currentColor;
+}

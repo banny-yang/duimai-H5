@@ -6,7 +6,9 @@
     "postcss": false,
     "minified": false,
     "newFeature": true,
-    "bigPackageSizeSupport": true
+    "bigPackageSizeSupport": true,
+    "ignoreDevUnusedFiles": false,
+    "ignoreUploadUnusedFiles": false
   },
   "compileType": "miniprogram",
   "libVersion": "3.14.6",

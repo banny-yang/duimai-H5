@@ -1,9 +1,23 @@
 <template>
   <view class="user-avatar">
+    <!-- #ifdef H5 -->
     <svg class="user-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
       <circle cx="12" cy="8" r="3.5" />
       <path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6" stroke-linecap="round" />
     </svg>
+    <!-- #endif -->
+    <!-- #ifdef MP-WEIXIN -->
+    <view class="mp-icon mp-icon--user" aria-hidden="true">
+      <view class="mp-user-head" />
+      <view class="mp-user-body" />
+    </view>
+    <!-- #endif -->
+    <!-- #ifndef H5 || MP-WEIXIN -->
+    <svg class="user-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6" stroke-linecap="round" />
+    </svg>
+    <!-- #endif -->
   </view>
 </template>
 
