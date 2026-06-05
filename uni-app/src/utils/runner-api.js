@@ -1,4 +1,13 @@
-import { apiGet, apiPost, apiUpload, apiUploadBlob, setRunnerToken } from './api.js'
+import {
+  apiGet,
+  apiPost,
+  apiUpload,
+  apiUploadBlob,
+  setRunnerToken,
+  getRunnerToken,
+  ApiError,
+  CHAT_TIMEOUT_MS,
+} from './api.js'
 import { clearStoredIdentity, saveStoredIdentity } from './runner-identity.js'
 import { resolveH5Phase } from './event-phase.js'
 import { migrateToBundle } from './route-map.js'
@@ -197,7 +206,10 @@ export async function fetchProfile() {
 }
 
 export async function sendChat(req) {
-  return apiPost('/runner/chat', req)
+  if (!getRunnerToken()) {
+    throw new ApiError('会话未建立，请返回首页重新进入赛事', 401)
+  }
+  return apiPost('/runner/chat', req, true, { timeout: CHAT_TIMEOUT_MS })
 }
 
 export async function transcribeSpeech(filePathOrBlob) {

@@ -100,7 +100,7 @@ import {
   getRunnerChatSocketState,
   subscribeRunnerChatSocketState,
 } from '@/utils/runner-chat-ws.js'
-import { ApiError } from '@/utils/api.js'
+import { formatApiErrorMessage } from '@/utils/api.js'
 import { t } from '@/utils/i18n.js'
 import { isMpWeixinPlatform } from '@/utils/mp-layout.js'
 
@@ -294,12 +294,21 @@ async function sendQueryToAi(text, voiceMeta) {
         ? { inputSource: 'voice', voiceDurationMs: voiceMeta.durationMs }
         : {}),
     })
+    if (!res || typeof res !== 'object') {
+      chatError.value = '助手未返回内容，请稍后重试'
+      return
+    }
     if (res.conversationId) conversationId.value = res.conversationId
-    await appendReply(res.answer)
+    const answer = res.answer?.trim()
+    if (!answer) {
+      chatError.value = '助手未返回内容，请稍后重试'
+      return
+    }
+    await appendReply(answer)
     if (nearBottom.value) scrollBottom()
   } catch (e) {
-    const msg = e instanceof ApiError ? e.message : '对话请求失败'
-    if (/conversation not exists/i.test(msg)) conversationId.value = undefined
+    const msg = formatApiErrorMessage(e, '对话请求失败，请稍后重试')
+    if (/conversation not exists|会话已过期/i.test(msg)) conversationId.value = undefined
     chatError.value = msg
   } finally {
     thinking.value = false
@@ -344,7 +353,7 @@ async function onVoiceFile({ filePath, blob, durationMs }) {
     messages.value = messages.value.map((m) =>
       m.id === msgId ? { ...m, voiceStatus: 'failed' } : m,
     )
-    chatError.value = e instanceof ApiError ? e.message : '语音识别失败'
+    chatError.value = formatApiErrorMessage(e, '语音识别失败')
   } finally {
     thinking.value = false
   }

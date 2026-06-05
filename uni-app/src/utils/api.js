@@ -34,6 +34,39 @@ export class ApiError extends Error {
   }
 }
 
+/** 小程序构建后 instanceof 可能失效，需同时判断 name */
+export function isApiError(e) {
+  return (
+    e instanceof ApiError ||
+    (Boolean(e) && typeof e === 'object' && e.name === 'ApiError')
+  )
+}
+
+/** 将后端/网络错误转为用户可读文案（聊天等场景） */
+export function formatApiErrorMessage(e, fallback = '请求失败') {
+  const raw =
+    (isApiError(e) && e.message) ||
+    (e instanceof Error && e.message) ||
+    (e && typeof e.message === 'string' ? e.message : '')
+  if (!raw) return fallback
+  if (/Missing request attribute 'userId'/i.test(raw)) {
+    return '会话已失效，请返回首页重新进入赛事'
+  }
+  if (/conversation not exists/i.test(raw)) {
+    return '会话已过期，请重新发送'
+  }
+  if (/Dify 对话失败|invalid_param/i.test(raw)) {
+    return 'AI 服务繁忙，请稍后重试'
+  }
+  if (/timeout|超时/i.test(raw)) {
+    return '请求超时，请稍后重试'
+  }
+  if (/url not in domain|不在以下 request 合法域名/i.test(raw)) {
+    return '请求域名未配置，请在微信后台添加合法域名后重试'
+  }
+  return raw.length > 160 ? `${raw.slice(0, 160)}…` : raw
+}
+
 function assertRequestUrl(url) {
   if (!url || !/^https?:\/\//i.test(url)) {
     const hint =
@@ -70,7 +103,15 @@ export function setRunnerToken(token) {
   else uni.removeStorageSync(TOKEN_KEY)
 }
 
-function request({ method, path, data, params, auth = true }) {
+const DEFAULT_TIMEOUT_MS = 20000
+const CHAT_TIMEOUT_MS = 90000
+
+/** 微信小程序无 FormData，不可直接引用全局 FormData */
+function isFormDataPayload(data) {
+  return typeof FormData !== 'undefined' && data instanceof FormData
+}
+
+function request({ method, path, data, params, auth = true, timeout = DEFAULT_TIMEOUT_MS }) {
   return new Promise((resolve, reject) => {
     let url
     try {
@@ -85,7 +126,7 @@ function request({ method, path, data, params, auth = true }) {
       const token = getRunnerToken()
       if (token) header.Authorization = `Bearer ${token}`
     }
-    if (data != null && !(data instanceof Object && data.constructor === FormData)) {
+    if (data != null && !isFormDataPayload(data)) {
       header['Content-Type'] = 'application/json'
     }
 
@@ -94,7 +135,7 @@ function request({ method, path, data, params, auth = true }) {
       method,
       data,
       header,
-      timeout: 20000,
+      timeout,
       success(res) {
         const body = res.data
         if (!body || typeof body !== 'object') {
@@ -115,17 +156,23 @@ function request({ method, path, data, params, auth = true }) {
   })
 }
 
-export function apiGet(path, params, auth = true) {
-  return request({ method: 'GET', path, params, auth })
+export function apiGet(path, params, auth = true, options = {}) {
+  return request({ method: 'GET', path, params, auth, timeout: options.timeout })
 }
 
-export function apiPost(path, payload, auth = true) {
-  return request({ method: 'POST', path, data: payload, auth })
+export function apiPost(path, payload, auth = true, options = {}) {
+  return request({ method: 'POST', path, data: payload, auth, timeout: options.timeout })
 }
+
+export { CHAT_TIMEOUT_MS }
 
 /** H5：Blob 上传（MediaRecorder 录音） */
 export function apiUploadBlob(path, blob, name = 'audio', filename = 'recording.webm', auth = true) {
   return new Promise((resolve, reject) => {
+    if (typeof FormData === 'undefined') {
+      reject(new ApiError('当前环境不支持 FormData 上传，请使用文字输入', 0))
+      return
+    }
     const token = auth ? getRunnerToken() : null
     if (auth && !token) {
       reject(new ApiError('请先绑定参赛号登录后再使用语音输入', 401))
