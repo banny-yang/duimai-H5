@@ -12,7 +12,8 @@
   </view>
   <view v-else-if="message.role === 'staff'" class="chat-row-assistant">
     <view class="staff-bubble">
-      <text>{{ message.text }}</text>
+      <rich-text v-if="message.text" class="md-content" :nodes="mdToNodes(message.text)" />
+      <text v-else>{{ message.text }}</text>
     </view>
   </view>
   <view v-else-if="message.role === 'assistant'" class="chat-row-assistant">
@@ -22,7 +23,8 @@
         <text class="label-text">对麦智能</text>
       </view>
       <view class="ai-bubble">
-        <text>{{ message.text }}</text>
+        <rich-text v-if="message.text" class="md-content" :nodes="mdToNodes(message.text)" />
+        <text v-else>{{ message.text }}</text>
         <text v-if="message.streaming" class="cursor">|</text>
       </view>
     </view>
@@ -33,12 +35,23 @@
 import GreetingMessage from './GreetingMessage.vue'
 import AiAvatar from './AiAvatar.vue'
 import UserAvatar from './UserAvatar.vue'
+import { parseMarkdown } from '@/utils/markdown-parser.js'
 
 defineProps({
   message: Object,
   runner: Object,
   greeting: String,
 })
+
+/**
+ * 将 Markdown 文本转为 rich-text 组件可用的 HTML 字符串
+ * @param {string} text - 原始 Markdown 文本
+ * @returns {string} HTML 字符串
+ */
+function mdToNodes(text) {
+  if (!text || typeof text !== 'string') return ''
+  return parseMarkdown(text)
+}
 </script>
 
 <style scoped>

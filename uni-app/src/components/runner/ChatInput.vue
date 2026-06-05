@@ -25,12 +25,21 @@
         @mouseup.prevent="onHoldEnd"
         @mouseleave.prevent="onHoldCancel"
       >
+        <!-- 录音中：波形动画 + 录音指示点 -->
+        <view v-if="isRecording" class="hold-rec-indicator" aria-hidden="true">
+          <view class="hold-rec-dot" />
+          <view class="hold-rec-ring" />
+        </view>
+        <!-- 非录音：麦克风图标 -->
+        <view v-else class="hold-mic-icon" aria-hidden="true">
+          <MicIcon />
+        </view>
         <view v-if="isRecording" class="hold-waves" aria-hidden="true">
           <view
-            v-for="i in 5"
+            v-for="i in 7"
             :key="i"
             class="hold-wave-bar"
-            :style="{ animationDelay: `${(i - 1) * 0.12}s` }"
+            :style="{ animationDelay: `${(i - 1) * 0.1}s` }"
           />
         </view>
         <text class="hold-label">{{ isRecording ? '松开 结束' : '按住 说话' }}</text>
@@ -438,14 +447,14 @@ function onHoldCancel() {
   min-width: 0;
   min-height: 88rpx;
   border-radius: 999rpx;
-  border: 1px solid rgba(255, 102, 0, 0.28);
+  border: 1px solid rgba(var(--primary-rgb), 0.28);
   background: #fff;
   box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.04);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .input-shell--focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 6rpx rgba(255, 102, 0, 0.1);
+  box-shadow: 0 0 0 6rpx rgba(var(--primary-rgb), 0.1);
 }
 .input-shell--disabled {
   background: var(--secondary-bg);
@@ -509,80 +518,178 @@ function onHoldCancel() {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16rpx;
-  border-radius: 999rpx;
-  border: 2px solid rgba(255, 102, 0, 0.22);
-  background: linear-gradient(180deg, #fff 0%, var(--primary-surface) 100%);
-  box-shadow: 0 2rpx 12rpx rgba(255, 102, 0, 0.08);
+  gap: 12rpx;
+  border-radius: 44rpx;
+  border: 2rpx solid rgba(var(--primary-rgb), 0.18);
+  background: linear-gradient(135deg, #fff 0%, var(--primary-glow) 50%, var(--primary-surface) 100%);
+  box-shadow:
+    0 2rpx 8rpx rgba(var(--primary-rgb), 0.06),
+    0 4rpx 16rpx rgba(var(--primary-rgb), 0.04),
+    inset 0 1rpx 2rpx rgba(255, 255, 255, 0.8);
   overflow: hidden;
   transition:
-    transform 0.12s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    background 0.15s ease;
+    transform 0.16s cubic-bezier(0.22, 0.61, 0.36, 1),
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
 }
+
+/* 触控按压反馈 */
 .hold-speak:active:not(.hold-speak--disabled):not(.hold-speak--recording) {
-  transform: scale(0.985);
-  border-color: rgba(255, 102, 0, 0.45);
-  background: var(--primary-surface);
+  transform: scale(0.97);
+  border-color: rgba(var(--primary-rgb), 0.4);
+  background: linear-gradient(135deg, var(--primary-glow) 0%, var(--primary-surface) 100%);
+  box-shadow:
+    0 1rpx 4rpx rgba(var(--primary-rgb), 0.1),
+    inset 0 2rpx 4rpx rgba(var(--primary-rgb), 0.06);
 }
+
+/* 录音中状态 */
 .hold-speak--recording {
   border-color: var(--primary);
-  background: rgba(255, 102, 0, 0.1);
+  background: linear-gradient(135deg, var(--primary-surface) 0%, var(--primary-muted) 100%);
   box-shadow:
-    0 0 0 6rpx rgba(255, 102, 0, 0.12),
-    0 4rpx 16rpx rgba(255, 102, 0, 0.18);
+    0 0 0 8rpx rgba(var(--primary-rgb), 0.08),
+    0 0 24rpx rgba(var(--primary-rgb), 0.15),
+    0 4rpx 16rpx rgba(var(--primary-rgb), 0.12);
+  animation: hold-speak-glow 2s ease-in-out infinite;
   transform: scale(0.98);
 }
-.hold-speak--disabled {
-  opacity: 0.5;
+
+@keyframes hold-speak-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 8rpx rgba(var(--primary-rgb), 0.08),
+      0 0 24rpx rgba(var(--primary-rgb), 0.15),
+      0 4rpx 16rpx rgba(var(--primary-rgb), 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 14rpx rgba(var(--primary-rgb), 0.04),
+      0 0 32rpx rgba(var(--primary-rgb), 0.22),
+      0 4rpx 20rpx rgba(var(--primary-rgb), 0.16);
+  }
 }
+
+.hold-speak--disabled {
+  opacity: 0.4;
+}
+
+/* 麦克风图标 */
+.hold-mic-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+/* 录音指示器：红点 + 扩散环 */
+.hold-rec-indicator {
+  position: relative;
+  width: 28rpx;
+  height: 28rpx;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hold-rec-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: rec-dot-pulse 1s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes rec-dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.65; }
+}
+
+.hold-rec-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2rpx solid rgba(239, 68, 68, 0.4);
+  animation: rec-ring-expand 1.2s ease-out infinite;
+}
+
+@keyframes rec-ring-expand {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* 波形动画 */
+.hold-waves {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 5rpx;
+  height: 36rpx;
+  z-index: 1;
+}
+
+.hold-wave-bar {
+  width: 5rpx;
+  min-height: 10rpx;
+  border-radius: 3rpx;
+  background: var(--primary);
+  animation: hold-wave-bounce 0.85s ease-in-out infinite;
+}
+
+@keyframes hold-wave-bounce {
+  0%, 100% {
+    height: 12rpx;
+    opacity: 0.45;
+  }
+  30% {
+    height: 32rpx;
+    opacity: 1;
+  }
+  60% {
+    height: 18rpx;
+    opacity: 0.75;
+  }
+}
+
+/* 标签文字 */
 .hold-label {
   font-size: 30rpx;
   font-weight: 700;
   color: var(--ink);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   z-index: 1;
+  white-space: nowrap;
 }
+
 .hold-speak--recording .hold-label {
   color: var(--primary-deeper);
 }
-.hold-waves {
-  display: flex;
-  align-items: flex-end;
-  gap: 6rpx;
-  height: 32rpx;
-  z-index: 1;
-}
-.hold-wave-bar {
-  width: 6rpx;
-  height: 16rpx;
-  border-radius: 999rpx;
-  background: var(--primary);
-  animation: hold-wave 0.75s ease-in-out infinite;
-}
-@keyframes hold-wave {
-  0%,
-  100% {
-    transform: scaleY(0.45);
-    opacity: 0.55;
-  }
-  50% {
-    transform: scaleY(1);
-    opacity: 1;
-  }
-}
+
+/* 录音进度条 */
 .hold-progress {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 6rpx;
-  background: rgba(255, 102, 0, 0.12);
+  height: 5rpx;
+  background: rgba(var(--primary-rgb), 0.1);
 }
+
 .hold-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary-dark), var(--primary));
+  background: linear-gradient(90deg, var(--primary-dark), var(--primary), var(--primary-deeper));
   border-radius: 0 999rpx 999rpx 0;
   transition: width 0.1s linear;
 }
