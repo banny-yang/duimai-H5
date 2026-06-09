@@ -58,7 +58,7 @@ import {
 import { resolveH5Phase } from '@/utils/event-phase.js'
 import { ApiError, API_BASE } from '@/utils/api.js'
 
-import { getMpPageMinHeightStyle, isMpWeixinPlatform } from '@/utils/mp-layout.js'
+import { getMpPageMinHeightStyle, getMpCapsuleRightGapPx, getMpCapsuleNavBarHeightPx, isMpWeixinPlatform } from '@/utils/mp-layout.js'
 
 const items = ref([])
 const loading = ref(true)
@@ -70,7 +70,20 @@ const pageStyle = ref({})
 onLoad((query) => {
   if (isMpWeixinPlatform()) {
     pageStyle.value = getMpPageMinHeightStyle()
+    const capsuleGap = getMpCapsuleRightGapPx()
+    const capsuleNavH = getMpCapsuleNavBarHeightPx()
+    let statusBarH = 0
+    try { statusBarH = uni.getSystemInfoSync().statusBarHeight || 0 } catch { /* ignore */ }
+    pageStyle.value = {
+      ...pageStyle.value,
+      ...(statusBarH > 0 ? { '--mp-status-bar-h': `${statusBarH}px` } : {}),
+      ...(capsuleGap > 0 ? { '--mp-capsule-right-gap': `${capsuleGap}px` } : {}),
+      ...(capsuleNavH > 0 ? { '--mp-capsule-nav-h': `${capsuleNavH}px` } : {}),
+    }
   }
+  // #ifdef H5
+  pageStyle.value = { ...pageStyle.value, paddingTop: 'var(--status-bar-height)' }
+  // #endif
   const g = query?.eventGuid?.trim()
   if (g && isEventPublicGuid(g)) {
     navigateToRunner(g)

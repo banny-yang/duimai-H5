@@ -25,6 +25,8 @@
 import { ref, watch, nextTick } from 'vue'
 import {
   getMpPageLayoutStyle,
+  getMpCapsuleRightGapPx,
+  getMpCapsuleNavBarHeightPx,
   bindMpWindowResize,
   isMpWeixinPlatform,
 } from '@/utils/mp-layout.js'
@@ -155,12 +157,29 @@ export function useMpRunnerLayout(chatMaximizedRef, pageInstance = null) {
           // SOS 按钮底部位置 = 协议栏高度 + 输入区高度 + 偏移
           const sosBottom = footerH + inputH + 88
 
+          // 获取胶囊按钮相关间距与状态栏高度
+          const capsuleRightGap = getMpCapsuleRightGapPx()
+          const capsuleNavBarH = getMpCapsuleNavBarHeightPx()
+          let statusBarH = 0
+          let capsuleBottomY = 0
+          try {
+            statusBarH = uni.getSystemInfoSync().statusBarHeight || 0
+            const capsule = uni.getMenuButtonBoundingClientRect()
+            if (capsule && capsule.height) {
+              capsuleBottomY = (capsule.bottom || (capsule.top + capsule.height))
+            }
+          } catch { /* ignore */ }
+
           // 应用布局变量到 CSS
           applyVars({
             '--mp-header-h': `${headerH}px`,   // 标题栏高度
             '--mp-body-h': `${bodyH}px`,       // 信息区高度
             '--mp-footer-h': `${footerH}px`,   // 协议栏高度
             '--mp-sos-bottom': `${sosBottom}px`,  // SOS按钮底部位置
+            '--mp-status-bar-h': `${statusBarH}px`,  // 状态栏高度
+            '--mp-capsule-right-gap': `${capsuleRightGap}px`,  // 胶囊按钮右侧安全间距
+            '--mp-capsule-nav-h': `${capsuleNavBarH}px`,  // 胶囊按钮对齐的导航内容区高度
+            '--mp-capsule-bottom-y': `${capsuleBottomY}px`,  // 胶囊按钮底部Y坐标（作为第二排内容的 top）
           })
 
           // 测量消息滚动区域高度

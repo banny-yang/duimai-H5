@@ -391,8 +391,14 @@ const {
   unmount: unmountMpLayout,          // 卸载
 } = useMpRunnerLayout(chatMaximized, pageInstance)
 
-// 根元素样式（小程序环境有额外样式）
-const mpRootStyle = computed(() => (isMp ? mpLayoutStyle.value : {}))
+// 根元素样式（小程序环境有额外样式，H5 需要避开状态栏）
+const mpRootStyle = computed(() => {
+  if (isMp) return mpLayoutStyle.value
+  // #ifdef H5
+  return { paddingTop: 'var(--status-bar-height)' }
+  // #endif
+  return {}
+})
 
 /**
  * ========================================

@@ -105,12 +105,27 @@
    标题栏样式
    ======================================== */
 
-/* 标题栏：不压缩，固定在顶部，适配刘海屏安全区域 */
+/* 标题栏：logo+赛事名与胶囊同排，验证身份+阶段标签放在胶囊下方 */
 .runner-header {
   flex-shrink: 0;                    /* 不允许压缩 */
-  position: relative;                /* 相对定位 */
+  position: relative;                /* 相对定位（为 .header-right 绝对定位提供锚点） */
   z-index: var(--z-surface);        /* 在表面层级 */
-  padding-top: calc(20rpx + env(safe-area-inset-top));  /* 顶部安全区域适配刘海屏 */
+  box-sizing: border-box;            /* height 包含 padding */
+  align-items: flex-start;           /* 取消居中，让 .header-left 从顶部排列 */
+  height: calc(var(--mp-capsule-bottom-y, 0px) + 44rpx);  /* 总高度 = 胶囊底部 + 第二排 */
+  padding: var(--mp-status-bar-h, 0px) var(--mp-capsule-right-gap, 24rpx) 0 24rpx;  /* 上=状态栏 右=避开胶囊 下=0 左=24rpx */
+}
+
+/* .header-left 高度与胶囊区对齐，内容自居中 */
+.runner-header .header-left {
+  height: var(--mp-capsule-nav-h, auto);
+}
+
+/* .header-right 绝对定位，贴紧胶囊底部 */
+.runner-header .header-right {
+  position: absolute;
+  right: 0;
+  top: var(--mp-capsule-bottom-y, 0px);
 }
 
 /* ========================================
@@ -318,6 +333,14 @@
   min-height: 360rpx;                /* 最小高度 360rpx */
   height: 0;                         /* 高度为0，靠内容撑开 */
   box-sizing: border-box;             /* 盒模型：边框盒 */
+}
+
+/* 选择赛事页标题栏：高度对齐胶囊按钮，右侧避开胶囊 */
+.picker-header {
+  box-sizing: border-box;
+  height: calc(var(--mp-status-bar-h, 0px) + var(--mp-capsule-nav-h, 0px));
+  padding-top: var(--mp-status-bar-h, 0px);
+  padding-right: var(--mp-capsule-right-gap, 32rpx);
 }
 
 /* ========================================

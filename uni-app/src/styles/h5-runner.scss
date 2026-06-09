@@ -30,11 +30,17 @@
   align-items: center;
   justify-content: space-between;
   padding: 20rpx 24rpx;
-  padding-top: calc(20rpx + env(safe-area-inset-top));
   background: #fff;
   border-bottom: 1px solid var(--secondary-border);
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
 }
+
+/* H5 自定义导航栏下，根容器需要避开状态栏 */
+/* #ifdef H5 */
+.h5-root--runner {
+  padding-top: env(safe-area-inset-top);
+}
+/* #endif */
 
 .runner-main {
   position: relative;
@@ -646,7 +652,7 @@
 
 .sos-toast {
   position: fixed;
-  top: calc(120rpx + env(safe-area-inset-top));
+  top: calc(120rpx + var(--status-bar-height, 0px));
   left: 50%;
   transform: translateX(-50%);
   background: linear-gradient(180deg, var(--alert-top), var(--alert-bottom));
@@ -951,9 +957,15 @@
   flex-direction: column;
 }
 
+/* H5 自定义导航栏下，根容器需要避开状态栏 */
+/* #ifdef H5 */
+.picker-page {
+  padding-top: env(safe-area-inset-top);
+}
+/* #endif */
+
 .picker-header {
   padding: 32rpx;
-  padding-top: calc(32rpx + env(safe-area-inset-top));
   border-bottom: 1px solid var(--secondary-border);
 }
 

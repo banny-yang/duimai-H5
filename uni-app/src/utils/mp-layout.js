@@ -120,6 +120,55 @@ export function getMpPageMinHeightStyle() {
 
 
 
+/**
+ * 获取微信小程序胶囊按钮右侧安全间距（px）
+ * 用于标题栏右侧内容的 padding-right，避免被胶囊按钮遮挡
+ *
+ * @returns {number} 需要的最小右侧间距（px），获取失败返回 0
+ */
+export function getMpCapsuleRightGapPx() {
+  // #ifndef MP-WEIXIN
+  return 0
+  // #endif
+  // #ifdef MP-WEIXIN
+  try {
+    const capsule = uni.getMenuButtonBoundingClientRect()
+    if (!capsule || !capsule.width) return 0
+    const info = uni.getSystemInfoSync()
+    const screenWidth = info.windowWidth || 375
+    // 从屏幕右边缘到胶囊左边缘的距离 + 8px 额外间距
+    return Math.ceil(screenWidth - capsule.left) + 8
+  } catch {
+    return 0
+  }
+  // #endif
+}
+
+/**
+ * 获取微信小程序自定义导航栏高度（px）
+ * 根据胶囊按钮位置计算，确保标题栏内容与胶囊按钮垂直居中
+ * 公式： (胶囊.top - 状态栏高度) * 2 + 胶囊.height
+ *
+ * @returns {number} 导航栏高度（px），获取失败返回 0
+ */
+export function getMpCapsuleNavBarHeightPx() {
+  // #ifndef MP-WEIXIN
+  return 0
+  // #endif
+  // #ifdef MP-WEIXIN
+  try {
+    const capsule = uni.getMenuButtonBoundingClientRect()
+    if (!capsule || !capsule.height) return 0
+    const info = uni.getSystemInfoSync()
+    const statusBarH = info.statusBarHeight || 0
+    // 标准自定义导航栏公式：上间距 + 胶囊高度 + 下间距（与上间距相等）
+    return Math.floor((capsule.top - statusBarH) * 2 + capsule.height)
+  } catch {
+    return 0
+  }
+  // #endif
+}
+
 export function bindMpWindowResize(onResize) {
 
   if (!isMpWeixinPlatform() || typeof onResize !== 'function') {
