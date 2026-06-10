@@ -8,7 +8,7 @@
  * - 包含 SOS 紧急救援功能
  * 
  * 布局结构：
- * - 标题栏（Logo、赛事名称、身份验证、阶段标签）
+ * - 标题栏（Logo、赛事名称、副标题）
  * - 信息区（通知公告、身份验证、快捷入口）
  * - 聊天区（消息列表、快捷问题、输入框）
  * - 协议栏（隐私政策、用户协议）
@@ -41,25 +41,14 @@
       
       <!-- ========== 标题栏 ========== -->
       <view class="runner-header">
-        <view class="header-left">
-          <!-- Logo 图片或文字标记 -->
-          <image v-if="headerLogo" class="logo-img" :src="headerLogo" mode="aspectFit" />
-          <view v-else class="logo-mark">麦</view>
-          
-          <!-- 标题区域 -->
-          <view class="header-text">
-            <text class="header-sub">{{ locale === 'en' ? 'Duimai Runner' : '对麦智能 · 选手助手' }}</text>
-            <text class="header-title">{{ displayTitle }}</text>
-          </view>
-        </view>
-        
-        <view class="header-right">
-          <!-- 身份验证按钮（未验证时显示） -->
-          <text v-if="!identityVerified" class="verify-pill" @tap="verifyOpen = true">
-            {{ t(locale, 'verifyIdentity') }}
-          </text>
-          <!-- 赛事阶段标签 -->
-          <PhaseBadge :phase="phase" />
+        <!-- Logo 图片或文字标记 -->
+        <image v-if="headerLogo" class="logo-img" :src="headerLogo" mode="aspectFit" />
+        <view v-else class="logo-mark">麦</view>
+
+        <!-- 标题区域：赛事名称在上，副标题在下 -->
+        <view class="header-text">
+          <text class="header-title">{{ displayTitle }}</text>
+          <text class="header-sub">{{ locale === 'en' ? 'Duimai Runner' : '对麦智能 · 选手助手' }}</text>
         </view>
       </view>
 
@@ -582,15 +571,9 @@ function onSosSubmitted(msg) {
 </script>
 
 <style scoped>
-.header-left,
-.header-right {
-  display: flex;
-  align-items: center;
+/* 标题栏内 logo 与文字之间的间距 */
+.runner-header {
   gap: 16rpx;
-}
-.header-left {
-  min-width: 0;
-  flex: 1;
 }
 .header-text {
   min-width: 0;

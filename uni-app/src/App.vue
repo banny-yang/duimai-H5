@@ -41,6 +41,9 @@ onLaunch(() => {
 <style lang="scss">
 @import '@/styles/h5-runner.scss';
 @import '@/styles/iconfont-runner.scss';
+/* #ifdef MP-WEIXIN */
+@import '@/styles/mp-icons.scss';
+/* #endif */
 
 button::after {
   border: none;

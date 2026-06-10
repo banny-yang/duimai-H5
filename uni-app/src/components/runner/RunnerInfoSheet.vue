@@ -1,5 +1,5 @@
 <template>
-  <SheetModal :show="show" title="我的参赛信息" @close="$emit('close')">
+  <SheetModal :show="show" title="参赛信息" @close="$emit('close')">
     <text class="sync" :class="{ visible: loading }">正在从服务器同步…</text>
     <view class="hero">
       <text class="label">选手</text>

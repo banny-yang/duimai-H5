@@ -1,5 +1,5 @@
 <template>
-  <view class="phase-badge">
+  <view class="phase-badge" :class="`phase-badge--${phase}`">
     <view class="phase-dot" />
     <text>{{ label }}</text>
   </view>

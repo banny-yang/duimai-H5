@@ -23,8 +23,8 @@ import ShortcutIcon from '@/components/icons/ShortcutIcon.vue'
 defineEmits(['select'])
 
 const shortcuts = [
-  { id: 'info', label: '我的参赛信息', desc: '参赛号·分区·领物' },
-  { id: 'map', label: '赛道补给地图', desc: '公里数·补给点' },
+  { id: 'info', label: '参赛信息', desc: '参赛号·分区·领物' },
+  { id: 'map', label: '赛道地图', desc: '公里数·补给点' },
   { id: 'shuttle', label: '交通接驳', desc: '物资·返程大巴' },
 ]
 </script>

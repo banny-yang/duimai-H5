@@ -1,5 +1,5 @@
 <template>
-  <SheetModal :show="show" title="赛道补给地图" @close="$emit('close')">
+  <SheetModal :show="show" title="赛道地图" @close="$emit('close')">
     <text class="hint">{{ categoryHint }}</text>
     <view v-if="loadError" class="err">{{ loadError }}</view>
     <scroll-view v-if="showSwitcher" scroll-x class="routes">

@@ -105,27 +105,13 @@
    标题栏样式
    ======================================== */
 
-/* 标题栏：logo+赛事名与胶囊同排，验证身份+阶段标签放在胶囊下方 */
+/* 标题栏：logo+赛事名+副标题，整行与胶囊按钮垂直居中 */
 .runner-header {
   flex-shrink: 0;                    /* 不允许压缩 */
-  position: relative;                /* 相对定位（为 .header-right 绝对定位提供锚点） */
   z-index: var(--z-surface);        /* 在表面层级 */
   box-sizing: border-box;            /* height 包含 padding */
-  align-items: flex-start;           /* 取消居中，让 .header-left 从顶部排列 */
-  height: calc(var(--mp-capsule-bottom-y, 0px) + 44rpx);  /* 总高度 = 胶囊底部 + 第二排 */
+  height: calc(var(--mp-status-bar-h, 0px) + var(--mp-capsule-nav-h, 0px));  /* 总高度 = 状态栏 + 胶囊导航区高度 */
   padding: var(--mp-status-bar-h, 0px) var(--mp-capsule-right-gap, 24rpx) 0 24rpx;  /* 上=状态栏 右=避开胶囊 下=0 左=24rpx */
-}
-
-/* .header-left 高度与胶囊区对齐，内容自居中 */
-.runner-header .header-left {
-  height: var(--mp-capsule-nav-h, auto);
-}
-
-/* .header-right 绝对定位，贴紧胶囊底部 */
-.runner-header .header-right {
-  position: absolute;
-  right: 0;
-  top: var(--mp-capsule-bottom-y, 0px);
 }
 
 /* ========================================
@@ -338,9 +324,19 @@
 /* 选择赛事页标题栏：高度对齐胶囊按钮，右侧避开胶囊 */
 .picker-header {
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   height: calc(var(--mp-status-bar-h, 0px) + var(--mp-capsule-nav-h, 0px));
-  padding-top: var(--mp-status-bar-h, 0px);
-  padding-right: var(--mp-capsule-right-gap, 32rpx);
+  padding: var(--mp-status-bar-h, 0px) var(--mp-capsule-right-gap, 32rpx) 0 32rpx;
+}
+
+/* 底部栏：GUID 入口 + 提示，适配安全区域 */
+.picker-bottom {
+  flex-shrink: 0;
+  background: #fff;
+  border-top: 1px solid var(--secondary-border);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* ========================================

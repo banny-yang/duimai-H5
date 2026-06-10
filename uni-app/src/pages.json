@@ -4,6 +4,7 @@
       "path": "pages/index",
       "style": {
         "navigationBarTitleText": "选择赛事",
+        "navigationBarTextStyle": "black",
         "navigationStyle": "custom"
       }
     },
@@ -11,6 +12,7 @@
       "path": "pages/runner/runner",
       "style": {
         "navigationBarTitleText": "选手助手",
+        "navigationBarTextStyle": "black",
         "navigationStyle": "custom",
         "disableScroll": true
       }

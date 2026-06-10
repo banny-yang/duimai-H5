@@ -59,6 +59,9 @@
     "permission": {
       "scope.record": {
         "desc": "用于语音输入转文字"
+      },
+      "scope.userLocation": {
+        "desc": "用于获取您的位置信息以提供路线导航服务"
       }
     },
     "usingComponents": true,
