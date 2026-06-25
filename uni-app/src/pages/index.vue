@@ -73,7 +73,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import PhaseBadge from '@/components/runner/PhaseBadge.vue'
 import {
   fetchSelectableEvents,
@@ -82,6 +82,7 @@ import {
 } from '@/utils/runner-api.js'
 import { resolveH5Phase } from '@/utils/event-phase.js'
 import { ApiError, API_BASE } from '@/utils/api.js'
+import { DEFAULT_SHARE_TITLE, enableMpShareMenu } from '@/utils/mp-share.js'
 
 import { getMpPageMinHeightStyle, getMpCapsuleRightGapPx, getMpCapsuleNavBarHeightPx, isMpWeixinPlatform } from '@/utils/mp-layout.js'
 
@@ -93,6 +94,9 @@ const apiBase = API_BASE
 const pageStyle = ref({})
 
 onLoad((query) => {
+  // #ifdef MP-WEIXIN
+  enableMpShareMenu()
+  // #endif
   if (isMpWeixinPlatform()) {
     pageStyle.value = getMpPageMinHeightStyle()
     const capsuleGap = getMpCapsuleRightGapPx()
@@ -114,6 +118,18 @@ onLoad((query) => {
     navigateToRunner(g)
   }
 })
+
+// #ifdef MP-WEIXIN
+onShareAppMessage(() => ({
+  title: DEFAULT_SHARE_TITLE,
+  path: '/pages/index',
+}))
+
+onShareTimeline(() => ({
+  title: DEFAULT_SHARE_TITLE,
+  query: '',
+}))
+// #endif
 
 onMounted(() => {
   loadEvents()

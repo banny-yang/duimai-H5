@@ -5,7 +5,9 @@
       "style": {
         "navigationBarTitleText": "选择赛事",
         "navigationBarTextStyle": "black",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "enableShareAppMessage": true,
+        "enableShareTimeline": true
       }
     },
     {
@@ -14,7 +16,9 @@
         "navigationBarTitleText": "选手助手",
         "navigationBarTextStyle": "black",
         "navigationStyle": "custom",
-        "disableScroll": true
+        "disableScroll": true,
+        "enableShareAppMessage": true,
+        "enableShareTimeline": true
       }
     }
   ],

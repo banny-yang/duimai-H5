@@ -242,7 +242,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, getCurrentInstance } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { isMpWeixinPlatform } from '@/utils/mp-layout.js'
 import { t } from '@/utils/i18n.js'
 import { applyH5BrandTheme, brandThemeStyle } from '@/utils/h5-brand-theme.js'
@@ -264,6 +264,12 @@ import RunnerInfoSheet from '@/components/runner/RunnerInfoSheet.vue'
 import RouteMapSheet from '@/components/runner/RouteMapSheet.vue'
 import ShuttleSheet from '@/components/runner/ShuttleSheet.vue'
 import LegalSheet from '@/components/runner/LegalSheet.vue'
+import {
+  buildRunnerSharePath,
+  buildRunnerShareQuery,
+  buildRunnerShareTitle,
+  enableMpShareMenu,
+} from '@/utils/mp-share.js'
 // #ifdef MP-WEIXIN
 import { getIconGlyph, iconfontStyle } from '@/utils/iconfont-text.js'
 // #endif
@@ -313,6 +319,10 @@ onLoad((query) => {
   
   // 设置语言
   langQuery.value = query?.lang
+
+  // #ifdef MP-WEIXIN
+  enableMpShareMenu()
+  // #endif
 })
 
 /**
@@ -435,6 +445,18 @@ const chatDisabledHint = computed(() => {
 
 // 带阶段的赛事数据（用于传递给子组件）
 const eventWithPhase = computed(() => ({ ...event.value, phase: phase.value }))
+
+// #ifdef MP-WEIXIN
+onShareAppMessage(() => ({
+  title: buildRunnerShareTitle(event.value?.name, branding.value?.brandTitle),
+  path: buildRunnerSharePath(eventGuidParam.value),
+}))
+
+onShareTimeline(() => ({
+  title: buildRunnerShareTitle(event.value?.name, branding.value?.brandTitle),
+  query: buildRunnerShareQuery(eventGuidParam.value),
+}))
+// #endif
 
 /**
  * ========================================
