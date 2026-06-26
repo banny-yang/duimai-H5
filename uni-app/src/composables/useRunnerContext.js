@@ -1,7 +1,8 @@
 import { ref, computed, onUnmounted, unref } from 'vue'
 import {
   bindRunnerIdentity,
-  enterSession,
+  enterSessionForPlatform,
+  wxLoginSession,
   fetchNotice,
   fetchH5QuickQuestions,
   fetchOfflinePack,
@@ -18,6 +19,12 @@ import { getStoredIdentity } from '@/utils/runner-identity.js'
 import { resolveH5Phase } from '@/utils/event-phase.js'
 import { resolveLocale } from '@/utils/i18n.js'
 import { ApiError } from '@/utils/api.js'
+import {
+  getWxUserProfile,
+  saveWxProfile,
+  getStoredWxProfile,
+  hasWxProfile,
+} from '@/utils/mp-login.js'
 
 const EMPTY_RUNNER = {
   id: '',
@@ -64,6 +71,8 @@ export function useRunnerContext(eventGuidSource, options = {}) {
   const loading = ref(true)
   const error = ref(null)
   const apiConnected = ref(false)
+  const wxProfile = ref(getStoredWxProfile())
+  const wxProfileLoggedIn = ref(hasWxProfile(wxProfile.value))
 
   let noticeTimer = null
 
@@ -71,6 +80,14 @@ export function useRunnerContext(eventGuidSource, options = {}) {
     runner.value = mapSessionToRunner(session)
     greeting.value = session.greeting ?? ''
     identityVerified.value = session.visitor !== true
+    if (session.wxNickName || session.wxAvatarUrl) {
+      wxProfile.value = {
+        nickName: session.wxNickName || '',
+        avatarUrl: session.wxAvatarUrl || '',
+      }
+      saveWxProfile(wxProfile.value)
+      wxProfileLoggedIn.value = true
+    }
   }
 
   async function tryRestoreIdentity(guid, session) {
@@ -148,7 +165,7 @@ export function useRunnerContext(eventGuidSource, options = {}) {
 
       let session = null
       if (!fromOfflineCache) {
-        session = await enterSession(guid)
+        session = await enterSessionForPlatform(guid)
         session = await tryRestoreIdentity(guid, session)
       }
 
@@ -226,6 +243,14 @@ export function useRunnerContext(eventGuidSource, options = {}) {
     applySession(session)
   }
 
+  /** 微信小程序：getUserProfile 授权后登录 */
+  async function loginWithWechatProfile() {
+    const profile = await getWxUserProfile('用于展示您的微信昵称与头像')
+    const session = await wxLoginSession(getGuid(), profile)
+    applySession(session)
+    return profile
+  }
+
   const phase = computed(() =>
     resolveH5Phase({
       eventDate: event.value.eventDate,
@@ -256,8 +281,11 @@ export function useRunnerContext(eventGuidSource, options = {}) {
     loading,
     error,
     apiConnected,
+    wxProfile,
+    wxProfileLoggedIn,
     load,
     startNoticePoll,
     verifyIdentity,
+    loginWithWechatProfile,
   }
 }

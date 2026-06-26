@@ -12,6 +12,7 @@ import { clearStoredIdentity, saveStoredIdentity } from './runner-identity.js'
 import { resolveH5Phase } from './event-phase.js'
 import { migrateToBundle } from './route-map.js'
 import { normalizeShuttleConfig } from './shuttle.js'
+import { getWxLoginCode, getStoredWxProfile } from './mp-login.js'
 
 const EVENT_GUID_KEY = 'duimai_event_guid'
 
@@ -30,9 +31,47 @@ export function setStoredEventGuid(guid) {
   else uni.removeStorageSync(EVENT_GUID_KEY)
 }
 
+/** 从小程序 onLoad query 解析赛事 GUID（支持 eventGuid 与扫码 scene） */
+export function resolveEventGuidFromLaunchQuery(query) {
+  const direct = String(query?.eventGuid || '').trim()
+  if (direct) return direct
+  const sceneRaw = query?.scene
+  if (sceneRaw == null || sceneRaw === '') return ''
+  try {
+    return decodeURIComponent(String(sceneRaw)).trim()
+  } catch {
+    return String(sceneRaw).trim()
+  }
+}
+
 export function isEventPublicGuid(value) {
   const v = value.trim()
   return EVENT_GUID_DASHED_RE.test(v) || EVENT_GUID_SIMPLE_RE.test(v)
+}
+
+/** 从扫码结果、链接或纯 GUID 文本解析赛事 public_guid */
+export function parseEventGuidFromText(raw) {
+  const text = String(raw || '').trim()
+  if (!text) return null
+  if (isEventPublicGuid(text)) return text
+  try {
+    const url = new URL(text)
+    const segments = url.pathname.split('/').filter(Boolean)
+    const last = segments[segments.length - 1]
+    if (last && isEventPublicGuid(last)) return last
+    const q =
+      url.searchParams.get('eventGuid') ||
+      url.searchParams.get('event_guid') ||
+      url.searchParams.get('event')
+    if (q && isEventPublicGuid(q)) return q
+  } catch {
+    /* not a URL */
+  }
+  const m = text.match(
+    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32}/i,
+  )
+  if (m && isEventPublicGuid(m[0])) return m[0]
+  return null
 }
 
 export function isH5ApprovedEvent(status) {
@@ -169,6 +208,35 @@ export async function enterSession(eventGuid) {
   setRunnerToken(data.token)
   if (data.eventGuid) setStoredEventGuid(data.eventGuid)
   return data
+}
+
+/** 微信小程序：wx.login + 用户授权昵称头像 */
+export async function wxLoginSession(eventGuid, options = {}) {
+  const loginCode = options.loginCode || (await getWxLoginCode())
+  const payload = { eventGuid, loginCode }
+  const nickName = String(options.nickName || '').trim()
+  const avatarUrl = String(options.avatarUrl || '').trim()
+  if (nickName) payload.nickName = nickName
+  if (avatarUrl) payload.avatarUrl = avatarUrl
+  const data = await apiPost('/runner/session/wx-login', payload, false)
+  setRunnerToken(data.token)
+  if (data.eventGuid) setStoredEventGuid(data.eventGuid)
+  return data
+}
+
+/** 小程序进入赛事：wx-login（带本地已存头像昵称），失败回退 enter */
+export async function enterSessionForPlatform(eventGuid) {
+  // #ifdef MP-WEIXIN
+  try {
+    const stored = getStoredWxProfile()
+    return await wxLoginSession(eventGuid, stored || {})
+  } catch {
+    return await enterSession(eventGuid)
+  }
+  // #endif
+  // #ifndef MP-WEIXIN
+  return enterSession(eventGuid)
+  // #endif
 }
 
 export async function bindRunnerIdentity(eventGuid, bibNumber, idCardSuffix) {

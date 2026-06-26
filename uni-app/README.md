@@ -189,6 +189,45 @@ VITE_API_BASE_URL=https://你的选手端域名/api
 
 本地开发者工具可在 `manifest.json` 的 `mp-weixin.setting.urlCheck: false` 下临时跳过域名校验；真机与上线仍须配置合法域名。
 
+### 微信小程序登录
+
+进入 Runner 页后弹出 **「微信授权登录」**：用户点击按钮 → `getUserProfile` 获取**昵称与头像** → `POST /runner/session/wx-login`（同时 `wx.login` 换 openid）。**不获取手机号**。
+
+选手身份验证（SOS / 参赛信息）仍使用 **参赛号 + 身份证后 6 位**，与微信登录独立。
+
+#### `getUserProfile:fail api scope is not declared in the privacy agreement`
+
+表示调用了 `getUserProfile`，但**未在微信公众平台声明对应隐私类型**（或声明尚未生效）。
+
+**后台配置（必做）：**
+
+1. 登录 [微信公众平台](https://mp.weixin.qq.com) → **设置** → **服务内容声明** → **用户隐私保护指引**
+2. 补充隐私类型：**收集你的昵称、头像**
+3. 填写使用场景说明（如：用于展示选手端微信昵称与头像）
+4. **提交审核**；通过后通常需 **约 1 小时** 才生效（部分账号需更久）
+5. 确认 `src/manifest.json` 中 `mp-weixin.appid` 与后台小程序 AppID 一致
+
+**代码侧（本仓库已适配）：**
+
+- `manifest.json` 已开启 `__usePrivacyCheck__`
+- 登录弹窗会先走微信隐私协议（`agreePrivacyAuthorization`），同意后再调用 `getUserProfile`
+
+若已配置仍报错：清缓存重启开发者工具，或退出小程序重新进入后再试。
+
+**8091 后端配置**（`duimai-frontend-service`）：
+
+```yaml
+wechat:
+  mini-program:
+    app-id: wx你的小程序AppID
+    app-secret: 你的小程序AppSecret
+    mock-enabled: false
+```
+
+开发联调可 `mock-enabled: true`（不请求微信服务器）。
+
+**小程序端**：`manifest.json` → `mp-weixin.appid` 填同一 AppID。
+
 
 
 ## 命令

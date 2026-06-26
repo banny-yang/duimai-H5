@@ -169,6 +169,35 @@ export function getMpCapsuleNavBarHeightPx() {
   // #endif
 }
 
+/**
+ * 自定义导航栏相关 CSS 变量（状态栏、胶囊区、胶囊高度、右侧避让）
+ * @returns {Record<string, string>}
+ */
+export function getMpCustomNavStyleVars() {
+  // #ifndef MP-WEIXIN
+  return {}
+  // #endif
+  // #ifdef MP-WEIXIN
+  try {
+    const capsule = uni.getMenuButtonBoundingClientRect()
+    if (!capsule?.height) return {}
+    const info = uni.getSystemInfoSync()
+    const statusBarH = info.statusBarHeight || 0
+    const navBarH = Math.floor((capsule.top - statusBarH) * 2 + capsule.height)
+    const screenWidth = info.windowWidth || 375
+    const rightGap = Math.ceil(screenWidth - capsule.left) + 8
+    return {
+      '--mp-status-bar-h': `${statusBarH}px`,
+      '--mp-capsule-nav-h': `${navBarH}px`,
+      '--mp-capsule-h': `${capsule.height}px`,
+      '--mp-capsule-right-gap': `${rightGap}px`,
+    }
+  } catch {
+    return {}
+  }
+  // #endif
+}
+
 export function bindMpWindowResize(onResize) {
 
   if (!isMpWeixinPlatform() || typeof onResize !== 'function') {

@@ -37,6 +37,31 @@ export function isEventPublicGuid(value: string): boolean {
   return EVENT_GUID_DASHED_RE.test(v) || EVENT_GUID_SIMPLE_RE.test(v);
 }
 
+/** 从扫码结果、链接或纯 GUID 文本解析赛事 public_guid */
+export function parseEventGuidFromText(raw: string): string | null {
+  const text = raw?.trim() || "";
+  if (!text) return null;
+  if (isEventPublicGuid(text)) return text;
+  try {
+    const url = new URL(text);
+    const segments = url.pathname.split("/").filter(Boolean);
+    const last = segments[segments.length - 1];
+    if (last && isEventPublicGuid(last)) return last;
+    const q =
+      url.searchParams.get("eventGuid") ||
+      url.searchParams.get("event_guid") ||
+      url.searchParams.get("event");
+    if (q && isEventPublicGuid(q)) return q;
+  } catch {
+    /* not a URL */
+  }
+  const m = text.match(
+    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32}/i,
+  );
+  if (m && isEventPublicGuid(m[0])) return m[0];
+  return null;
+}
+
 /** 从路径 /{event_guid} 解析赛事 GUID */
 export function readEventGuidFromPath(): string | undefined {
   const segments = window.location.pathname.split("/").filter(Boolean);

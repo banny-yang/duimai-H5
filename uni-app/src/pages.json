@@ -3,7 +3,7 @@
     {
       "path": "pages/index",
       "style": {
-        "navigationBarTitleText": "选择赛事",
+        "navigationBarTitleText": "对麦智能",
         "navigationBarTextStyle": "black",
         "navigationStyle": "custom",
         "enableShareAppMessage": true,

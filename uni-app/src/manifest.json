@@ -51,6 +51,7 @@
   "mp-weixin": {
     "appid": "",
     "libVersion": "3.14.6",
+    "__usePrivacyCheck__": true,
     "setting": {
       "urlCheck": false,
       "ignoreDevUnusedFiles": false,

@@ -182,6 +182,16 @@
       @close="verifyOpen = false"
     />
 
+    <!-- 微信小程序：授权昵称头像登录 -->
+    <MpWechatLoginSheet
+      v-if="isMp"
+      ref="wxLoginSheetRef"
+      :show="wxLoginOpen"
+      :loading="wxLoginLoading"
+      @authorize="onWxProfileLogin"
+      @close="wxLoginOpen = false"
+    />
+
     <!-- SOS 救援流程弹窗 -->
     <SosFlowModal
       :show="sosOpen"
@@ -247,7 +257,7 @@ import { isMpWeixinPlatform } from '@/utils/mp-layout.js'
 import { t } from '@/utils/i18n.js'
 import { applyH5BrandTheme, brandThemeStyle } from '@/utils/h5-brand-theme.js'
 import { readPhaseOverride } from '@/utils/event-phase.js'
-import { isEventPublicGuid } from '@/utils/runner-api.js'
+import { isEventPublicGuid, resolveEventGuidFromLaunchQuery } from '@/utils/runner-api.js'
 import { useRunnerContext } from '@/composables/useRunnerContext.js'
 import { useMpRunnerLayout } from '@/composables/useMpRunnerLayout.js'
 import ConnectionError from '@/components/runner/ConnectionError.vue'
@@ -258,6 +268,7 @@ import ChatInput from '@/components/runner/ChatInput.vue'
 import SosFloatingButton from '@/components/runner/SosFloatingButton.vue'
 import ChatFooter from '@/components/runner/ChatFooter.vue'
 import IdentityVerifyPopup from '@/components/runner/IdentityVerifyPopup.vue'
+import MpWechatLoginSheet from '@/components/runner/MpWechatLoginSheet.vue'
 import SosFlowModal from '@/components/runner/SosFlowModal.vue'
 import PickupGuideSheet from '@/components/runner/PickupGuideSheet.vue'
 import RunnerInfoSheet from '@/components/runner/RunnerInfoSheet.vue'
@@ -301,10 +312,8 @@ const langQuery = ref(undefined)        // 语言查询参数
 
 // 页面加载时执行，验证赛事 GUID 的有效性
 onLoad((query) => {
-  // 获取 URL 中的 eventGuid 参数
-  const g = query?.eventGuid?.trim() || ''
+  const g = resolveEventGuidFromLaunchQuery(query)
   
-  // 验证 GUID 格式，无效则重定向到首页
   if (!g || !isEventPublicGuid(g)) {
     uni.showToast({ title: '无效的赛事链接', icon: 'none' })
     setTimeout(() => uni.redirectTo({ url: '/pages/index' }), 1500)
@@ -350,6 +359,8 @@ const {
   load,                   // 加载数据函数
   startNoticePoll,        // 启动通知轮询
   verifyIdentity,         // 身份验证函数
+  loginWithWechatProfile, // 微信个人信息登录
+  wxProfileLoggedIn,
 } = useRunnerContext(eventGuidParam, { phaseOverride, langQuery })
 
 /**
@@ -368,6 +379,9 @@ const pickupOpen = ref(false)   // 接驳指引弹窗
 // 聊天状态
 const chatMaximized = ref(false)  // 聊天面板是否全屏
 const chatPanelRef = ref(null)     // 聊天面板组件引用
+const wxLoginSheetRef = ref(null)
+const wxLoginOpen = ref(false)
+const wxLoginLoading = ref(false)
 
 // SOS 提示
 const sosToast = ref(null)  // 临时显示的提示信息
@@ -482,6 +496,14 @@ onMounted(async () => {
   if (apiConnected.value) startNoticePoll()
 })
 
+watch(
+  [loading, apiConnected, wxProfileLoggedIn],
+  ([isLoading, connected, loggedIn]) => {
+    if (!isMp || isLoading || !connected || loggedIn) return
+    wxLoginOpen.value = true
+  },
+)
+
 // 组件卸载
 onUnmounted(() => {
   // 小程序环境卸载布局控制器
@@ -552,11 +574,24 @@ function onShortcut(id) {
  * @param {string} idCardSuffix - 身份证后4位
  */
 async function onIdentityVerified(bibNumber, idCardSuffix) {
-  // 执行验证
   await verifyIdentity(bibNumber, idCardSuffix)
-  
-  // 显示成功提示
   uni.showToast({ title: '验证成功', icon: 'success' })
+}
+
+async function onWxProfileLogin() {
+  if (wxLoginLoading.value) return
+  wxLoginLoading.value = true
+  try {
+    await loginWithWechatProfile()
+    wxLoginOpen.value = false
+    uni.showToast({ title: '登录成功', icon: 'success' })
+  } catch (e) {
+    wxLoginSheetRef.value?.setError?.(
+      e instanceof Error ? e.message : '微信登录失败',
+    )
+  } finally {
+    wxLoginLoading.value = false
+  }
 }
 
 /**
