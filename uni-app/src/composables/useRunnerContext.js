@@ -245,7 +245,7 @@ export function useRunnerContext(eventGuidSource, options = {}) {
 
   /** 微信小程序：getUserProfile 授权后登录 */
   async function loginWithWechatProfile() {
-    const profile = await getWxUserProfile('用于展示您的微信昵称与头像')
+    const profile = await getWxUserProfile()
     const session = await wxLoginSession(getGuid(), profile)
     applySession(session)
     return profile

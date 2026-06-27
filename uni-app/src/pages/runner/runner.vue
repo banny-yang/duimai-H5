@@ -188,6 +188,7 @@
       ref="wxLoginSheetRef"
       :show="wxLoginOpen"
       :loading="wxLoginLoading"
+      :event-name="event.name"
       @authorize="onWxProfileLogin"
       @close="wxLoginOpen = false"
     />

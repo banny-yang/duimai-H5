@@ -2,6 +2,35 @@ import { ApiError } from './api.js'
 
 const WX_PROFILE_KEY = 'duimai_wx_profile'
 
+/** 微信 getUserProfile.desc 上限 30（中文按 2、英文按 1 计） */
+const WX_PROFILE_DESC_MAX = 30
+const WX_PROFILE_DESC_DEFAULT = '用于微信授权登录'
+
+function wxProfileDescSize(text) {
+  let size = 0
+  for (const ch of String(text || '')) {
+    size += ch.charCodeAt(0) <= 0x7f ? 1 : 2
+  }
+  return size
+}
+
+/** 截断至微信 desc 合规长度 */
+export function normalizeWxProfileDesc(desc) {
+  const fallback = WX_PROFILE_DESC_DEFAULT
+  const raw = String(desc || fallback).trim() || fallback
+  if (wxProfileDescSize(raw) <= WX_PROFILE_DESC_MAX) return raw
+
+  let size = 0
+  let out = ''
+  for (const ch of raw) {
+    const unit = ch.charCodeAt(0) <= 0x7f ? 1 : 2
+    if (size + unit > WX_PROFILE_DESC_MAX) break
+    size += unit
+    out += ch
+  }
+  return out || fallback
+}
+
 /** uni.login / wx.login 获取临时 code */
 export function getWxLoginCode() {
   return new Promise((resolve, reject) => {
@@ -27,11 +56,11 @@ export function getWxLoginCode() {
  * 用户点击按钮后调用，获取微信昵称与头像（须用户主动授权）
  * @see https://developers.weixin.qq.com/miniprogram/dev/api/open-api/user-info/wx.getUserProfile.html
  */
-export function getWxUserProfile(desc = '用于展示您的微信昵称与头像') {
+export function getWxUserProfile(desc = WX_PROFILE_DESC_DEFAULT) {
   return new Promise((resolve, reject) => {
     // #ifdef MP-WEIXIN
     uni.getUserProfile({
-      desc,
+      desc: normalizeWxProfileDesc(desc),
       success(res) {
         const info = res.userInfo || {}
         const nickName = String(info.nickName || '').trim()
@@ -120,6 +149,30 @@ export function getMpPrivacySetting() {
     // #ifndef MP-WEIXIN
     resolve({ needAuthorization: false, privacyContractName: '' })
     // #endif
+  })
+}
+
+/** 若需隐私授权，自动弹出微信隐私确认框（无需自定义按钮） */
+export function ensureMpPrivacyAuthorized() {
+  return new Promise(async (resolve, reject) => {
+    const setting = await getMpPrivacySetting()
+    if (!setting.needAuthorization) {
+      resolve()
+      return
+    }
+    // #ifdef MP-WEIXIN
+    if (typeof uni.requirePrivacyAuthorize === 'function') {
+      uni.requirePrivacyAuthorize({
+        success: () => resolve(),
+        fail: (err) => {
+          const msg = err?.errMsg || '需同意隐私保护指引'
+          reject(new ApiError(msg, 0))
+        },
+      })
+      return
+    }
+    // #endif
+    reject(new ApiError('需同意隐私保护指引', 0))
   })
 }
 

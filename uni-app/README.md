@@ -63,6 +63,10 @@
 
 | `src/pages/index.vue` | 赛事选择 |
 
+| `src/pages/login/login.vue` | 第三方微信授权页（Cosmic Oracle 视觉，成功后关闭小程序） |
+
+第三方接入详见 **[docs/第三方登录授权接入.md](./docs/第三方登录授权接入.md)**（唤起示例与 extraData 字段说明）。
+
 | `src/pages/runner/runner.vue` | 选手主屏 |
 
 | `src/utils/runner-api.js` | 选手 API |
@@ -191,9 +195,39 @@ VITE_API_BASE_URL=https://你的选手端域名/api
 
 ### 微信小程序登录
 
-进入 Runner 页后弹出 **「微信授权登录」**：用户点击按钮 → `getUserProfile` 获取**昵称与头像** → `POST /runner/session/wx-login`（同时 `wx.login` 换 openid）。**不获取手机号**。
+| 场景 | 入口 | 登录后行为 |
+|------|------|------------|
+| **第三方授权** | `/pages/login/login`（可选 `?state=…`） | 回传身份 `extraData` → 关闭/返回调用方 |
+| **选手页内** | `MpWechatLoginSheet` 底部弹窗 | 留在选手页，`POST /runner/session/wx-login`（需 eventGuid） |
 
-选手身份验证（SOS / 参赛信息）仍使用 **参赛号 + 身份证后 6 位**，与微信登录独立。
+第三方小程序唤起示例：
+
+```javascript
+wx.navigateToMiniProgram({
+  appId: '对脉小程序AppID',
+  path: '/pages/login/login?state=your-correlation-id',
+  envVersion: 'release',
+})
+```
+
+授权成功后回传 `extraData`（**不请求对脉服务端**）：
+
+```json
+{
+  "ok": true,
+  "code": "wx.login 临时凭证",
+  "loginCode": "同上",
+  "nickName": "昵称",
+  "avatarUrl": "头像 URL",
+  "state": "透传 state"
+}
+```
+
+第三方在其**自有服务端**用 `code` 调用微信 `jscode2session` 换取 **openId**，并签发 **token**。
+
+**静默放行**：本地已有微信资料时，自动 `wx.login` 取新 code 并回传。
+
+选手页内流程：`getUserProfile` → `POST /runner/session/wx-login`（须带 `eventGuid`）。身份验证（SOS / 参赛信息）仍用参赛号 + 身份证后 6 位。
 
 #### `getUserProfile:fail api scope is not declared in the privacy agreement`
 

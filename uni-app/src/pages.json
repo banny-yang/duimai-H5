@@ -11,6 +11,18 @@
       }
     },
     {
+      "path": "pages/login/login",
+      "style": {
+        "navigationBarTitleText": "Cosmic Oracle",
+        "navigationBarTextStyle": "white",
+        "navigationStyle": "custom",
+        "backgroundColor": "#0B0C12",
+        "backgroundColorTop": "#0B0C12",
+        "backgroundColorBottom": "#141625",
+        "disableScroll": true
+      }
+    },
+    {
       "path": "pages/runner/runner",
       "style": {
         "navigationBarTitleText": "选手助手",

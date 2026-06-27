@@ -78,9 +78,41 @@ export function isH5ApprovedEvent(status) {
   return status != null && H5_APPROVED_EVENT_STATUSES.includes(status)
 }
 
-export function navigateToRunner(eventGuid) {
+function appendPageQuery(basePath, params) {
+  const pairs = []
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return
+    pairs.push(`${key}=${encodeURIComponent(String(value))}`)
+  })
+  return pairs.length ? `${basePath}?${pairs.join('&')}` : basePath
+}
+
+/** 选手页 URL（loginSheet=1 时使用底部弹窗登录，保留旧行为） */
+export function buildRunnerPageUrl({ eventGuid, phase, lang, loginSheet } = {}) {
+  const g = String(eventGuid || '').trim()
+  if (!g) return '/pages/runner/runner'
+  return appendPageQuery('/pages/runner/runner', {
+    eventGuid: g,
+    phase,
+    lang,
+    loginSheet: loginSheet ? '1' : undefined,
+  })
+}
+
+/** 第三方微信授权页 URL（无需赛事 GUID） */
+export function buildLoginPageUrl({ state, phase, lang } = {}) {
+  return appendPageQuery('/pages/login/login', { state, phase, lang })
+}
+
+export function navigateToRunner(eventGuid, options = {}) {
   uni.navigateTo({
-    url: `/pages/runner/runner?eventGuid=${encodeURIComponent(eventGuid)}`,
+    url: buildRunnerPageUrl({ eventGuid, ...options }),
+  })
+}
+
+export function navigateToLogin(options = {}) {
+  uni.navigateTo({
+    url: buildLoginPageUrl(options),
   })
 }
 
